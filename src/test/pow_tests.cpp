@@ -274,6 +274,34 @@ BOOST_AUTO_TEST_CASE(ChainParams_MAIN_sanity)
     sanity_check_chainparams(*m_node.args, ChainType::MAIN);
 }
 
+BOOST_AUTO_TEST_CASE(ChainParams_BIITCOIN_sanity)
+{
+    sanity_check_chainparams(*m_node.args, ChainType::BIITCOIN);
+}
+
+BOOST_AUTO_TEST_CASE(ChainParams_BIITCOIN_identity)
+{
+    const auto params = CreateChainParams(*m_node.args, ChainType::BIITCOIN);
+    const auto bitcoin = CreateChainParams(*m_node.args, ChainType::MAIN);
+    BOOST_CHECK(!params->IsTestChain());
+    BOOST_CHECK(GetNetworkForMagic(params->MessageStart()) == ChainType::BIITCOIN);
+    BOOST_CHECK(params->MessageStart() != bitcoin->MessageStart());
+    BOOST_CHECK(params->GenesisBlock().GetHash() != bitcoin->GenesisBlock().GetHash());
+    BOOST_CHECK_EQUAL(params->GenesisBlock().GetHash().GetHex(), "00000000ff377de0928a92008a80668fdada5c52238e027d16a441708668e5c7");
+    BOOST_CHECK_EQUAL(params->GenesisBlock().nTime, 1795003201);
+    BOOST_CHECK_EQUAL(params->GenesisBlock().nNonce, 4122612968);
+    BOOST_CHECK(CheckProofOfWork(params->GenesisBlock().GetHash(), params->GenesisBlock().nBits, params->GetConsensus()));
+    BOOST_CHECK_EQUAL(params->GetDefaultPort(), 19333);
+    BOOST_CHECK_EQUAL(params->Bech32HRP(), "biit");
+    BOOST_CHECK(params->DNSSeeds().empty());
+    BOOST_CHECK(params->FixedSeeds().empty());
+    BOOST_CHECK(params->GetConsensus().nMinimumChainWork.IsNull());
+    BOOST_CHECK(params->GetConsensus().defaultAssumeValid.IsNull());
+    BOOST_CHECK_EQUAL(params->GetConsensus().nPowTargetSpacing, bitcoin->GetConsensus().nPowTargetSpacing);
+    BOOST_CHECK_EQUAL(params->GetConsensus().nPowTargetTimespan, bitcoin->GetConsensus().nPowTargetTimespan);
+    BOOST_CHECK_EQUAL(params->GetConsensus().nSubsidyHalvingInterval, bitcoin->GetConsensus().nSubsidyHalvingInterval);
+}
+
 BOOST_AUTO_TEST_CASE(ChainParams_REGTEST_sanity)
 {
     sanity_check_chainparams(*m_node.args, ChainType::REGTEST);

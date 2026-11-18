@@ -236,6 +236,80 @@ public:
 };
 
 /**
+ * BiitCoin main network. It follows Bitcoin's consensus schedule with a
+ * separate chain history, network identity, and genesis block.
+ */
+class CBiitcoinParams : public CChainParams {
+public:
+    CBiitcoinParams()
+    {
+        m_chain_type = ChainType::BIITCOIN;
+        consensus.signet_blocks = false;
+        consensus.signet_challenge.clear();
+        consensus.nSubsidyHalvingInterval = 210000;
+        consensus.script_flag_exceptions.clear();
+        consensus.BIP34Height = 227931;
+        consensus.BIP34Hash = uint256{};
+        consensus.BIP65Height = 388381;
+        consensus.BIP66Height = 363725;
+        consensus.CSVHeight = 419328;
+        consensus.SegwitHeight = 481824;
+        consensus.MinBIP9WarningHeight = 711648;
+        consensus.powLimit = uint256{"00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
+        consensus.nPowTargetTimespan = 14 * 24 * 60 * 60;
+        consensus.nPowTargetSpacing = 10 * 60;
+        consensus.fPowAllowMinDifficultyBlocks = false;
+        consensus.enforce_BIP94 = false;
+        consensus.fPowNoRetargeting = false;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].min_activation_height = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].threshold = 1815;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].period = 2016;
+        // Bitcoin mainnet's historical activation heights are preserved, but its
+        // chain-specific checkpoints and assumed-valid work do not apply here.
+        consensus.nMinimumChainWork = uint256{};
+        consensus.defaultAssumeValid = uint256{};
+
+        // Distinct P2P magic and ports keep BiitCoin nodes separate from Bitcoin.
+        pchMessageStart[0] = 0xfa;
+        pchMessageStart[1] = 0xbf;
+        pchMessageStart[2] = 0xb5;
+        pchMessageStart[3] = 0xdb;
+        nDefaultPort = 19333;
+        nPruneAfterHeight = 100000;
+        m_assumed_blockchain_size = 0;
+        m_assumed_chain_state_size = 0;
+
+        const CScript genesisOutputScript = CScript() << "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f"_hex << OP_CHECKSIG;
+        genesis = CreateGenesisBlock("BiitCoin network genesis block", genesisOutputScript, 1795003201, 4122612968, 0x1d00ffff, 1, 50 * COIN);
+        consensus.hashGenesisBlock = genesis.GetHash();
+        assert(consensus.hashGenesisBlock == uint256{"00000000ff377de0928a92008a80668fdada5c52238e027d16a441708668e5c7"});
+        assert(genesis.hashMerkleRoot == uint256{"c32687dc926742476fef7e12846b3162535e1158565e4d2152b4f183cdf86f4a"});
+
+        vSeeds.clear();
+        vFixedSeeds.clear();
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1, 38);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1, 58);
+        base58Prefixes[SECRET_KEY] = std::vector<unsigned char>(1, 166);
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x91, 0xB2, 0x1E};
+        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x91, 0xAD, 0xE4};
+        bech32_hrp = "biit";
+        silent_payments_hrp = "bsp";
+
+        fDefaultConsistencyChecks = false;
+        m_is_mockable_chain = false;
+        m_assumeutxo_data.clear();
+        chainTxData = ChainTxData{.nTime = 0, .tx_count = 0, .dTxRate = 0.001};
+        m_headers_sync_params = HeadersSyncParams{
+            .commitment_period = 649,
+            .redownload_buffer_size = 15400,
+        };
+    }
+};
+
+/**
  * Testnet (v3): public test network which is reset from time to time.
  */
 class CTestNetParams : public CChainParams {
@@ -701,6 +775,11 @@ std::unique_ptr<const CChainParams> CChainParams::Main(const MainNetOptions& opt
     return std::make_unique<const CMainParams>(options);
 }
 
+std::unique_ptr<const CChainParams> CChainParams::Biitcoin()
+{
+    return std::make_unique<const CBiitcoinParams>();
+}
+
 std::unique_ptr<const CChainParams> CChainParams::TestNet(const TestNetOptions& options)
 {
     return std::make_unique<const CTestNetParams>(options);
@@ -725,6 +804,7 @@ std::vector<int> CChainParams::GetAvailableSnapshotHeights() const
 std::optional<ChainType> GetNetworkForMagic(const MessageStartChars& message)
 {
     const auto mainnet_msg = CChainParams::Main()->MessageStart();
+    const auto biitcoin_msg = CChainParams::Biitcoin()->MessageStart();
     const auto testnet_msg = CChainParams::TestNet()->MessageStart();
     const auto testnet4_msg = CChainParams::TestNet4()->MessageStart();
     const auto regtest_msg = CChainParams::RegTest()->MessageStart();
@@ -732,6 +812,8 @@ std::optional<ChainType> GetNetworkForMagic(const MessageStartChars& message)
 
     if (std::ranges::equal(message, mainnet_msg)) {
         return ChainType::MAIN;
+    } else if (std::ranges::equal(message, biitcoin_msg)) {
+        return ChainType::BIITCOIN;
     } else if (std::ranges::equal(message, testnet_msg)) {
         return ChainType::TESTNET;
     } else if (std::ranges::equal(message, testnet4_msg)) {

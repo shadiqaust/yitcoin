@@ -417,7 +417,7 @@ BOOST_AUTO_TEST_CASE(bip352_decode_address)
     };
 
     for (const auto& vec : invalid_vectors) {
-        for (const auto chain : {ChainType::MAIN, ChainType::TESTNET, ChainType::TESTNET4, ChainType::SIGNET, ChainType::REGTEST}) {
+        for (const auto chain : {ChainType::MAIN, ChainType::BIITCOIN, ChainType::TESTNET, ChainType::TESTNET4, ChainType::SIGNET, ChainType::REGTEST}) {
             SelectParams(chain);
             auto sp = DecodeSilentPaymentsAddress(vec.address, Params());
             BOOST_REQUIRE_MESSAGE(!sp.has_value(), vec.address);
