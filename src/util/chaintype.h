@@ -11,6 +11,7 @@
 
 enum class ChainType {
     MAIN,
+    BIITCOIN,
     TESTNET,
     SIGNET,
     REGTEST,
