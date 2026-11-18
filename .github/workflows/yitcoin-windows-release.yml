@@ -1,0 +1,184 @@
+name: Yitcoin Windows GUI pre-release
+
+on:
+  push:
+    branches:
+      - "release/windows-gui-preview"
+    paths:
+      - ".github/workflows/yitcoin-windows-release.yml"
+      - "contrib/yitcoin/windows_gui_smoke.py"
+      - "src/test/argsman_tests.cpp"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: yitcoin-windows-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-test-release:
+    if: github.repository == 'shadiqaust/yitcoin'
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 180
+    permissions:
+      contents: write
+    env:
+      PYTHONUTF8: 1
+      QT_ASSUME_STDERR_HAS_CONSOLE: 1
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Import Visual Studio environment
+        run: |
+          py -3 .github/ci-windows.py standard github_import_vs_env
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Record toolchain and source
+        run: |
+          git rev-parse HEAD
+          cmake --version
+          clang-cl --version
+          msbuild -version
+
+      - name: Cache vcpkg downloads and compiled dependencies
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/AppData/Local/vcpkg/downloads
+            ~/AppData/Local/vcpkg/archives
+          key: yitcoin-windows-gui-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-v1
+
+      - name: Configure wallet-enabled GUI
+        run: |
+          py -3 .github/ci-windows.py standard generate
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Build Windows executables
+        run: |
+          py -3 .github/ci-windows.py standard build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Validate executable manifests
+        run: |
+          py -3 .github/ci-windows.py standard check_manifests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Prepare unit test data
+        run: |
+          py -3 .github/ci-windows.py standard prepare_tests
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Run all compiled unit tests
+        run: |
+          $env:DIR_UNIT_TEST_DATA = "$pwd/unit_test_data"
+          ctest --test-dir build --build-config Release --output-on-failure --parallel 4
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Test two Yitcoin nodes and private mining
+        run: |
+          py -3 contrib/yitcoin/smoke_test.py --bindir build/bin/Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Package GUI and runtime dependencies
+        run: |
+          $package = New-Item -ItemType Directory -Force dist/yitcoin-windows-x64
+          Copy-Item build/bin/Release/*.exe $package
+          Get-ChildItem build/bin/Release -Filter *.dll | Copy-Item -Destination $package
+          Get-ChildItem $package -Filter '*test*.exe' | Remove-Item
+          Get-ChildItem $package -Filter '*bench*.exe' | Remove-Item
+          Get-ChildItem $package -Filter '*fuzz*.exe' | Remove-Item
+          $deploy = Get-ChildItem build/vcpkg_installed -Filter windeployqt.exe -Recurse |
+            Where-Object { $_.FullName -notmatch '\\debug\\' } | Select-Object -First 1
+          if (-not $deploy) { throw 'Qt deployment tool was not found' }
+          & $deploy.FullName --release --no-translations --compiler-runtime "$package/bitcoin-qt.exe"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path "$package/platforms/qwindows.dll")) {
+            throw 'Windows Qt platform plugin is missing'
+          }
+          Copy-Item COPYING "$package/COPYING.txt"
+          @'
+          @echo off
+          cd /d "%~dp0"
+          if not exist "yitcoin-data" mkdir "yitcoin-data"
+          start "" "%~dp0bitcoin-qt.exe" -chain=yitcoin -datadir="%~dp0yitcoin-data" -addnode=185.182.8.84:19433 -listen=0 -server=1
+          '@ | Set-Content "$package/Start-Yitcoin.cmd" -Encoding ascii
+          @"
+          Yitcoin Windows x64 experimental pre-release
+          Source commit: $env:GITHUB_SHA
+          Build run: https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID
+
+          Extract the entire ZIP into a writable folder, then double-click
+          Start-Yitcoin.cmd. Do not run the GUI directly: it defaults to the
+          upstream Bitcoin chain unless -chain=yitcoin is supplied.
+
+          The launcher selects the existing Yitcoin chain and one bootstrap peer.
+          It stores a NEW wallet and blockchain in the adjacent yitcoin-data folder.
+          It does not include your Linux wallet or transfer its balance.
+          Do not copy a live wallet database. Use wallet backup tools.
+          Keep wallet backups private. Never share private keys or seed material.
+
+          CLI example from PowerShell in this folder:
+          .\bitcoin-cli.exe -chain=yitcoin -datadir="`$pwd\yitcoin-data" getblockchaininfo
+
+          RPC uses local cookie authentication. Do not expose RPC port 19432.
+          The GUI does not itself CPU-mine. An external miner can use this node's
+          local RPC after peers connect and the chain synchronizes.
+          Mined rewards require 100 blocks of coinbase maturity.
+
+          UNSIGNED TEST SOFTWARE. Windows may display a publisher warning.
+          No independent security audit, code-signing certificate, or guarantee
+          of coin value is provided. Do not disable antivirus protection.
+          These automated tests do not establish public-mainnet security.
+          Checksums detect file changes; they are not a publisher signature.
+          "@ | Set-Content "$package/README.txt" -Encoding utf8
+          git rev-parse HEAD | Set-Content "$package/SOURCE_COMMIT.txt" -Encoding ascii
+
+      - name: Launch packaged GUI and verify wallet RPC
+        run: |
+          py -3 contrib/yitcoin/windows_gui_smoke.py --bindir dist/yitcoin-windows-x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Create ZIP and SHA256 checksum
+        run: |
+          Compress-Archive -Path dist/yitcoin-windows-x64 -DestinationPath dist/yitcoin-windows-x64.zip
+          $hash = (Get-FileHash dist/yitcoin-windows-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  yitcoin-windows-x64.zip" | Set-Content dist/SHA256SUMS.txt -Encoding ascii
+
+      - name: Save tested build as Actions artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: yitcoin-windows-x64
+          path: |
+            dist/yitcoin-windows-x64.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish experimental pre-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "yitcoin-windows-preview-$env:GITHUB_RUN_ID"
+          gh release create $tag dist/yitcoin-windows-x64.zip dist/SHA256SUMS.txt `
+            --repo "$env:GITHUB_REPOSITORY" --target "$env:GITHUB_SHA" --prerelease `
+            --title "Yitcoin Windows wallet - experimental preview" `
+            --notes-file dist/yitcoin-windows-x64/README.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Save failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-build-diagnostics
+          path: |
+            build/vcpkg-manifest-install.log
+            build/Testing/Temporary/LastTest.log
+            build/CMakeFiles/CMakeConfigureLog.yaml
+          if-no-files-found: ignore

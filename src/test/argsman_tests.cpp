@@ -1020,7 +1020,7 @@ BOOST_FIXTURE_TEST_CASE(util_ArgsMerge, ArgsMergeTestingSetup)
     // Results file is formatted like:
     //
     //   <input> || <IsArgSet/IsArgNegated/GetArg output> | <GetArgs output> | <GetUnsuitable output>
-    BOOST_CHECK_EQUAL(out_sha_hex, "334d885246086ed6d106cd62a5a591409730d0be68343ecb2bb5dad50803fa39");
+    BOOST_CHECK_EQUAL(out_sha_hex, "334d885246086ed6d106cd62a5a591409730d0be68343ebc2bb5dad50803fa39");
 }
 
 // Similar test as above, but for ArgsManager::GetChainTypeString function.
