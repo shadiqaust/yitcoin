@@ -236,14 +236,14 @@ public:
 };
 
 /**
- * BiitCoin main network. It follows Bitcoin's consensus schedule with a
+ * Yitcoin main network. It follows Bitcoin's consensus schedule with a
  * separate chain history, network identity, and genesis block.
  */
-class CBiitcoinParams : public CChainParams {
+class CYitcoinParams : public CChainParams {
 public:
-    CBiitcoinParams()
+    CYitcoinParams()
     {
-        m_chain_type = ChainType::BIITCOIN;
+        m_chain_type = ChainType::YITCOIN;
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 210000;
@@ -272,21 +272,21 @@ public:
         consensus.nMinimumChainWork = uint256{};
         consensus.defaultAssumeValid = uint256{};
 
-        // Distinct P2P magic and ports keep BiitCoin nodes separate from Bitcoin.
+        // Distinct P2P magic and ports keep Yitcoin nodes separate from Bitcoin.
         pchMessageStart[0] = 0xfa;
-        pchMessageStart[1] = 0xbf;
-        pchMessageStart[2] = 0xb5;
-        pchMessageStart[3] = 0xdb;
-        nDefaultPort = 19333;
+        pchMessageStart[1] = 0x64;
+        pchMessageStart[2] = 0x7e;
+        pchMessageStart[3] = 0xb5;
+        nDefaultPort = 19433;
         nPruneAfterHeight = 100000;
         m_assumed_blockchain_size = 0;
         m_assumed_chain_state_size = 0;
 
         const CScript genesisOutputScript = CScript() << "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f"_hex << OP_CHECKSIG;
-        genesis = CreateGenesisBlock("BiitCoin network genesis block", genesisOutputScript, 1795003201, 4122612968, 0x1d00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock("Yitcoin network genesis block", genesisOutputScript, 1795011864, 210259129, 0x1d00ffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256{"00000000ff377de0928a92008a80668fdada5c52238e027d16a441708668e5c7"});
-        assert(genesis.hashMerkleRoot == uint256{"c32687dc926742476fef7e12846b3162535e1158565e4d2152b4f183cdf86f4a"});
+        assert(consensus.hashGenesisBlock == uint256{"00000000fac67770c911525f34ff956e78a64bc4cb73a6aa493634bea5545b63"});
+        assert(genesis.hashMerkleRoot == uint256{"0262e2a50edf1ba0ef565abbdd03de24ee756d797ed924ca88ed8c71610ac6c9"});
 
         vSeeds.clear();
         vFixedSeeds.clear();
@@ -295,8 +295,8 @@ public:
         base58Prefixes[SECRET_KEY] = std::vector<unsigned char>(1, 166);
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x91, 0xB2, 0x1E};
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x91, 0xAD, 0xE4};
-        bech32_hrp = "biit";
-        silent_payments_hrp = "bsp";
+        bech32_hrp = "yit";
+        silent_payments_hrp = "ysp";
 
         fDefaultConsistencyChecks = false;
         m_is_mockable_chain = false;
@@ -775,9 +775,9 @@ std::unique_ptr<const CChainParams> CChainParams::Main(const MainNetOptions& opt
     return std::make_unique<const CMainParams>(options);
 }
 
-std::unique_ptr<const CChainParams> CChainParams::Biitcoin()
+std::unique_ptr<const CChainParams> CChainParams::Yitcoin()
 {
-    return std::make_unique<const CBiitcoinParams>();
+    return std::make_unique<const CYitcoinParams>();
 }
 
 std::unique_ptr<const CChainParams> CChainParams::TestNet(const TestNetOptions& options)
@@ -804,7 +804,7 @@ std::vector<int> CChainParams::GetAvailableSnapshotHeights() const
 std::optional<ChainType> GetNetworkForMagic(const MessageStartChars& message)
 {
     const auto mainnet_msg = CChainParams::Main()->MessageStart();
-    const auto biitcoin_msg = CChainParams::Biitcoin()->MessageStart();
+    const auto yitcoin_msg = CChainParams::Yitcoin()->MessageStart();
     const auto testnet_msg = CChainParams::TestNet()->MessageStart();
     const auto testnet4_msg = CChainParams::TestNet4()->MessageStart();
     const auto regtest_msg = CChainParams::RegTest()->MessageStart();
@@ -812,8 +812,8 @@ std::optional<ChainType> GetNetworkForMagic(const MessageStartChars& message)
 
     if (std::ranges::equal(message, mainnet_msg)) {
         return ChainType::MAIN;
-    } else if (std::ranges::equal(message, biitcoin_msg)) {
-        return ChainType::BIITCOIN;
+    } else if (std::ranges::equal(message, yitcoin_msg)) {
+        return ChainType::YITCOIN;
     } else if (std::ranges::equal(message, testnet_msg)) {
         return ChainType::TESTNET;
     } else if (std::ranges::equal(message, testnet4_msg)) {

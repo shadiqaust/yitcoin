@@ -274,25 +274,25 @@ BOOST_AUTO_TEST_CASE(ChainParams_MAIN_sanity)
     sanity_check_chainparams(*m_node.args, ChainType::MAIN);
 }
 
-BOOST_AUTO_TEST_CASE(ChainParams_BIITCOIN_sanity)
+BOOST_AUTO_TEST_CASE(ChainParams_YITCOIN_sanity)
 {
-    sanity_check_chainparams(*m_node.args, ChainType::BIITCOIN);
+    sanity_check_chainparams(*m_node.args, ChainType::YITCOIN);
 }
 
-BOOST_AUTO_TEST_CASE(ChainParams_BIITCOIN_identity)
+BOOST_AUTO_TEST_CASE(ChainParams_YITCOIN_identity)
 {
-    const auto params = CreateChainParams(*m_node.args, ChainType::BIITCOIN);
+    const auto params = CreateChainParams(*m_node.args, ChainType::YITCOIN);
     const auto bitcoin = CreateChainParams(*m_node.args, ChainType::MAIN);
     BOOST_CHECK(!params->IsTestChain());
-    BOOST_CHECK(GetNetworkForMagic(params->MessageStart()) == ChainType::BIITCOIN);
+    BOOST_CHECK(GetNetworkForMagic(params->MessageStart()) == ChainType::YITCOIN);
     BOOST_CHECK(params->MessageStart() != bitcoin->MessageStart());
     BOOST_CHECK(params->GenesisBlock().GetHash() != bitcoin->GenesisBlock().GetHash());
-    BOOST_CHECK_EQUAL(params->GenesisBlock().GetHash().GetHex(), "00000000ff377de0928a92008a80668fdada5c52238e027d16a441708668e5c7");
-    BOOST_CHECK_EQUAL(params->GenesisBlock().nTime, 1795003201);
-    BOOST_CHECK_EQUAL(params->GenesisBlock().nNonce, 4122612968);
+    BOOST_CHECK_EQUAL(params->GenesisBlock().GetHash().GetHex(), "00000000fac67770c911525f34ff956e78a64bc4cb73a6aa493634bea5545b63");
+    BOOST_CHECK_EQUAL(params->GenesisBlock().nTime, 1795011864);
+    BOOST_CHECK_EQUAL(params->GenesisBlock().nNonce, 210259129);
     BOOST_CHECK(CheckProofOfWork(params->GenesisBlock().GetHash(), params->GenesisBlock().nBits, params->GetConsensus()));
-    BOOST_CHECK_EQUAL(params->GetDefaultPort(), 19333);
-    BOOST_CHECK_EQUAL(params->Bech32HRP(), "biit");
+    BOOST_CHECK_EQUAL(params->GetDefaultPort(), 19433);
+    BOOST_CHECK_EQUAL(params->Bech32HRP(), "yit");
     BOOST_CHECK(params->DNSSeeds().empty());
     BOOST_CHECK(params->FixedSeeds().empty());
     BOOST_CHECK(params->GetConsensus().nMinimumChainWork.IsNull());

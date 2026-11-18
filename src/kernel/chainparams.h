@@ -95,7 +95,7 @@ public:
     /** Default value for -checkmempool and -checkblockindex argument */
     bool DefaultConsistencyChecks() const { return fDefaultConsistencyChecks; }
     /** If this chain is exclusively used for testing */
-    bool IsTestChain() const { return m_chain_type != ChainType::MAIN && m_chain_type != ChainType::BIITCOIN; }
+    bool IsTestChain() const { return m_chain_type != ChainType::MAIN && m_chain_type != ChainType::YITCOIN; }
     /** If this chain allows time to be mocked */
     bool IsMockableChain() const { return m_is_mockable_chain; }
     uint64_t PruneAfterHeight() const { return nPruneAfterHeight; }
@@ -174,7 +174,7 @@ public:
     static std::unique_ptr<const CChainParams> SigNet() { const SigNetOptions opts{}; return SigNet(opts); }
     static std::unique_ptr<const CChainParams> Main(const MainNetOptions& options);
     static std::unique_ptr<const CChainParams> Main() { const MainNetOptions opts{}; return Main(opts); }
-    static std::unique_ptr<const CChainParams> Biitcoin();
+    static std::unique_ptr<const CChainParams> Yitcoin();
     static std::unique_ptr<const CChainParams> TestNet(const TestNetOptions& options);
     static std::unique_ptr<const CChainParams> TestNet() { const TestNetOptions opts{}; return TestNet(opts); }
     static std::unique_ptr<const CChainParams> TestNet4(const TestNetOptions& options);

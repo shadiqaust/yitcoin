@@ -56,8 +56,8 @@ try {
     Header header{};
     const std::string hex{
         "010000000000000000000000000000000000000000000000000000000000000000000000"
-        "4a6ff8cd83f1b452214d5e5658115e5362316b84127eef6f47426792dc8726c3"
-        "4193fd6affff001d00000000"
+        "c9c60a61718ced88ca24d97e796d75ee24de03ddbb5a56efa01bdf0ea5e26202"
+        "18b5fd6affff001d00000000"
     };
     if (hex.size() != header.size() * 2) throw std::runtime_error("Invalid header size");
     for (size_t i = 0; i < header.size(); ++i) {
@@ -69,7 +69,7 @@ try {
     SHA256_CTX prefix;
     SHA256_Init(&prefix);
     SHA256_Update(&prefix, header.data(), 64);
-    if (DisplayHash(DoubleHash(prefix, header)) != "fe8c9718408e6959fe875c0f8d3182f633744f7a4903e710bd29c225673b8b7f") {
+    if (DisplayHash(DoubleHash(prefix, header)) != "577f325ef3211ef121d8834733b154b5e073769bf2767a44e3afc8b8e04285bd") {
         throw std::runtime_error("Header/hash self-test failed");
     }
     Hash target{};
@@ -85,11 +85,11 @@ try {
         return 0;
     }
     uint64_t next_nonce{0};
-    uint32_t timestamp{1795003201};
+    uint32_t timestamp{1795011864};
     {
         std::ifstream input{argv[1]};
         if (input && !(input >> timestamp >> next_nonce)) throw std::runtime_error("Invalid checkpoint");
-        if (timestamp < 1795003201 || next_nonce > uint64_t{UINT32_MAX} + 1) throw std::runtime_error("Checkpoint out of range");
+        if (timestamp < 1795011864 || next_nonce > uint64_t{UINT32_MAX} + 1) throw std::runtime_error("Checkpoint out of range");
     }
     auto save = [&] {
         const std::string temporary = std::string{argv[1]} + ".tmp";

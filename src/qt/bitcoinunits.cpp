@@ -4,6 +4,7 @@
 
 #include <qt/bitcoinunits.h>
 
+#include <chainparams.h>
 #include <consensus/amount.h>
 
 #include <QStringList>
@@ -11,6 +12,11 @@
 #include <cassert>
 
 static constexpr auto MAX_DIGITS_BTC = 16;
+
+static bool IsYitcoin()
+{
+    return Params().GetChainType() == ChainType::YITCOIN;
+}
 
 BitcoinUnits::BitcoinUnits(QObject *parent):
         QAbstractListModel(parent),
@@ -31,9 +37,9 @@ QList<BitcoinUnit> BitcoinUnits::availableUnits()
 QString BitcoinUnits::longName(Unit unit)
 {
     switch (unit) {
-    case Unit::BTC: return QString("BTC");
-    case Unit::mBTC: return QString("mBTC");
-    case Unit::uBTC: return QString::fromUtf8("µBTC (bits)");
+    case Unit::BTC: return IsYitcoin() ? QString("YTC") : QString("BTC");
+    case Unit::mBTC: return IsYitcoin() ? QString("mYTC") : QString("mBTC");
+    case Unit::uBTC: return QString::fromUtf8(IsYitcoin() ? "µYTC (bits)" : "µBTC (bits)");
     case Unit::SAT: return QString("Satoshi (sat)");
     } // no default case, so the compiler can warn about missing cases
     assert(false);
@@ -53,9 +59,9 @@ QString BitcoinUnits::shortName(Unit unit)
 QString BitcoinUnits::description(Unit unit)
 {
     switch (unit) {
-    case Unit::BTC: return QString("Bitcoins");
-    case Unit::mBTC: return QString("Milli-Bitcoins (1 / 1" THIN_SP_UTF8 "000)");
-    case Unit::uBTC: return QString("Micro-Bitcoins (bits) (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+    case Unit::BTC: return IsYitcoin() ? QString("Yitcoins") : QString("Bitcoins");
+    case Unit::mBTC: return IsYitcoin() ? QString("Milli-Yitcoins (1 / 1" THIN_SP_UTF8 "000)") : QString("Milli-Bitcoins (1 / 1" THIN_SP_UTF8 "000)");
+    case Unit::uBTC: return IsYitcoin() ? QString("Micro-Yitcoins (bits) (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)") : QString("Micro-Bitcoins (bits) (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
     case Unit::SAT: return QString("Satoshi (sat) (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
     } // no default case, so the compiler can warn about missing cases
     assert(false);

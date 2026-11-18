@@ -1,4 +1,4 @@
-"""Run two loopback-only BiitCoin nodes against disposable data directories."""
+"""Run two loopback-only Yitcoin nodes against disposable data directories."""
 
 import argparse
 import hashlib
@@ -10,9 +10,9 @@ import tempfile
 import time
 
 
-GENESIS_TIME = 1795003201
-GENESIS_NONCE = 4122612968
-GENESIS_HASH = "00000000ff377de0928a92008a80668fdada5c52238e027d16a441708668e5c7"
+GENESIS_TIME = 1795011864
+GENESIS_NONCE = 210259129
+GENESIS_HASH = "00000000fac67770c911525f34ff956e78a64bc4cb73a6aa493634bea5545b63"
 BECH32_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
 
@@ -59,7 +59,7 @@ def main():
     options = parser.parse_args()
     bindir = options.bindir.resolve()
     processes = []
-    with tempfile.TemporaryDirectory(prefix="biitcoin-smoke-") as root:
+    with tempfile.TemporaryDirectory(prefix="yitcoin-smoke-") as root:
         clients = []
         try:
             ports = set()
@@ -69,7 +69,7 @@ def main():
             for index, (p2p, rpc) in enumerate(((p2p0, rpc0), (p2p1, rpc1))):
                 datadir = Path(root) / str(index)
                 datadir.mkdir()
-                common = ["-chain=biitcoin", f"-datadir={datadir}", f"-rpcport={rpc}"]
+                common = ["-chain=yitcoin", f"-datadir={datadir}", f"-rpcport={rpc}"]
                 command = [
                     str(bindir / "bitcoind"), *common,
                     "-server", "-connect=0", "-dnsseed=0", "-fixedseeds=0",
@@ -106,7 +106,7 @@ def main():
                 raise RuntimeError(f"Timed out waiting for {description}: {last_error}")
 
             for index in range(2):
-                wait_for(lambda: call(index, "getblockchaininfo")["chain"] == "biitcoin", "BiitCoin RPC")
+                wait_for(lambda: call(index, "getblockchaininfo")["chain"] == "yitcoin", "Yitcoin RPC")
                 info = call(index, "getblockchaininfo")
                 assert info["blocks"] == 0, info
                 genesis_hash = call(index, "getblockhash", "0")
@@ -121,9 +121,9 @@ def main():
                 target = (nbits & 0x7FFFFF) << (8 * ((nbits >> 24) - 3))
                 assert int.from_bytes(digest, "little") <= target, "Invalid genesis proof of work"
                 assert genesis_hash != "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
-                program = hashlib.sha256(b"BiitCoin smoke fixture").digest()[:20]
-                biitcoin_address = segwit_address("biit", 0, program)
-                assert call(index, "validateaddress", biitcoin_address)["isvalid"]
+                program = hashlib.sha256(b"Yitcoin smoke fixture").digest()[:20]
+                yitcoin_address = segwit_address("yit", 0, program)
+                assert call(index, "validateaddress", yitcoin_address)["isvalid"]
                 assert not call(index, "validateaddress", "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa")["isvalid"]
 
             assert call(0, "getblockhash", "0") == call(1, "getblockhash", "0")
@@ -139,7 +139,7 @@ def main():
             wait_for(peers_ready, "peer version handshake")
             print(
                 "PASS: two local nodes, unique genesis PoW, peer handshake, "
-                "BiitCoin address acceptance, and Bitcoin address rejection"
+                "Yitcoin address acceptance, and Bitcoin address rejection"
             )
         finally:
             for process in processes:

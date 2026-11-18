@@ -1,4 +1,4 @@
-name: BiitCoin headless smoke test
+name: Yitcoin headless smoke test
 
 on:
   push:
@@ -6,20 +6,20 @@ on:
       - "biitcoin/**"
     paths:
       - "src/**"
-      - "contrib/biitcoin/**"
-      - ".github/workflows/biitcoin-smoke.yml"
+      - "contrib/yitcoin/**"
+      - ".github/workflows/yitcoin-smoke.yml"
   pull_request:
     paths:
       - "src/**"
-      - "contrib/biitcoin/**"
-      - ".github/workflows/biitcoin-smoke.yml"
+      - "contrib/yitcoin/**"
+      - ".github/workflows/yitcoin-smoke.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  biitcoin-smoke:
+  yitcoin-smoke:
     name: Build and test two local nodes
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -34,4 +34,4 @@ jobs:
       - name: Build node and RPC client
         run: cmake --build build --target bitcoind bitcoin-cli -j2
       - name: Run loopback-only smoke test
-        run: python3 contrib/biitcoin/smoke_test.py --bindir build/bin
+        run: python3 contrib/yitcoin/smoke_test.py --bindir build/bin

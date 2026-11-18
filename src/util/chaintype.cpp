@@ -14,8 +14,8 @@ std::string ChainTypeToString(ChainType chain)
     switch (chain) {
     case ChainType::MAIN:
         return "main";
-    case ChainType::BIITCOIN:
-        return "biitcoin";
+    case ChainType::YITCOIN:
+        return "yitcoin";
     case ChainType::TESTNET:
         return "test";
     case ChainType::TESTNET4:
@@ -32,8 +32,8 @@ std::optional<ChainType> ChainTypeFromString(std::string_view chain)
 {
     if (chain == "main") {
         return ChainType::MAIN;
-    } else if (chain == "biitcoin") {
-        return ChainType::BIITCOIN;
+    } else if (chain == "yitcoin") {
+        return ChainType::YITCOIN;
     } else if (chain == "test") {
         return ChainType::TESTNET;
     } else if (chain == "testnet4") {

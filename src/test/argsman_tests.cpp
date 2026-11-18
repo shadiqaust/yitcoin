@@ -800,16 +800,16 @@ BOOST_AUTO_TEST_CASE(util_GetChainTypeString)
     BOOST_CHECK_THROW(test_args.GetChainTypeString(), std::runtime_error);
 }
 
-BOOST_AUTO_TEST_CASE(util_BiitcoinChainType)
+BOOST_AUTO_TEST_CASE(util_YitcoinChainType)
 {
     TestArgsManager test_args;
     test_args.SetupArgs({std::make_pair("-chain", ArgsManager::ALLOW_ANY)});
-    const char* argv[] = {"cmd", "-chain=biitcoin"};
+    const char* argv[] = {"cmd", "-chain=yitcoin"};
     std::string error;
 
     BOOST_CHECK(test_args.ParseParameters(2, argv, error));
-    BOOST_CHECK_EQUAL(test_args.GetChainTypeString(), "biitcoin");
-    BOOST_CHECK(test_args.GetChainType() == ChainType::BIITCOIN);
+    BOOST_CHECK_EQUAL(test_args.GetChainTypeString(), "yitcoin");
+    BOOST_CHECK(test_args.GetChainType() == ChainType::YITCOIN);
 }
 
 // Test different ways settings can be merged, and verify results. This test can
@@ -853,8 +853,8 @@ struct ArgsMergeTestingSetup : public BasicTestingSetup {
             ForEachNoDup(conf_actions, SET, SECTION_NEGATE, [&] {
                 for (bool soft_set : {false, true}) {
                     for (bool force_set : {false, true}) {
-                        for (const std::string& section : {ChainTypeToString(ChainType::MAIN), ChainTypeToString(ChainType::BIITCOIN), ChainTypeToString(ChainType::TESTNET), ChainTypeToString(ChainType::TESTNET4), ChainTypeToString(ChainType::SIGNET)}) {
-                            for (const std::string& network : {ChainTypeToString(ChainType::MAIN), ChainTypeToString(ChainType::BIITCOIN), ChainTypeToString(ChainType::TESTNET), ChainTypeToString(ChainType::TESTNET4), ChainTypeToString(ChainType::SIGNET)}) {
+                        for (const std::string& section : {ChainTypeToString(ChainType::MAIN), ChainTypeToString(ChainType::YITCOIN), ChainTypeToString(ChainType::TESTNET), ChainTypeToString(ChainType::TESTNET4), ChainTypeToString(ChainType::SIGNET)}) {
+                            for (const std::string& network : {ChainTypeToString(ChainType::MAIN), ChainTypeToString(ChainType::YITCOIN), ChainTypeToString(ChainType::TESTNET), ChainTypeToString(ChainType::TESTNET4), ChainTypeToString(ChainType::SIGNET)}) {
                                 for (bool net_specific : {false, true}) {
                                     fn(arg_actions, conf_actions, soft_set, force_set, section, network, net_specific);
                                 }
