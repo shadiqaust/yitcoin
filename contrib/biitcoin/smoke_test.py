@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Run two loopback-only BiitCoin nodes against disposable data directories."""
 
 import argparse

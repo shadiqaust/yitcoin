@@ -3,9 +3,10 @@
 #include <openssl/sha.h>
 
 #include <array>
+#include <charconv>
 #include <cstdint>
-#include <cstdio>
 #include <fstream>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -60,7 +61,10 @@ try {
     };
     if (hex.size() != header.size() * 2) throw std::runtime_error("Invalid header size");
     for (size_t i = 0; i < header.size(); ++i) {
-        header[i] = std::stoul(hex.substr(i * 2, 2), nullptr, 16);
+        unsigned int byte_value;
+        const auto [ptr, ec] = std::from_chars(hex.data() + i * 2, hex.data() + i * 2 + 2, byte_value, 16);
+        if (ec != std::errc{} || ptr != hex.data() + i * 2 + 2) throw std::runtime_error("Invalid header hex");
+        header[i] = static_cast<unsigned char>(byte_value);
     }
     SHA256_CTX prefix;
     SHA256_Init(&prefix);
@@ -77,7 +81,7 @@ try {
         throw std::runtime_error("Proof-of-work target self-test failed");
     }
     if (std::string{argv[1]} == "--self-test") {
-        std::puts("PASS: serialized header, double-SHA256, and difficulty-one target boundaries");
+        std::cout << "PASS: serialized header, double-SHA256, and difficulty-one target boundaries\n";
         return 0;
     }
     uint64_t next_nonce{0};
@@ -97,8 +101,7 @@ try {
         }
         if (std::rename(temporary.c_str(), argv[1]) != 0) throw std::runtime_error("Cannot replace checkpoint");
     };
-    std::printf("Self-test passed; resuming time=%u nonce=%llu\n", timestamp, static_cast<unsigned long long>(next_nonce));
-    std::fflush(stdout);
+    std::cout << "Self-test passed; resuming time=" << timestamp << " nonce=" << next_nonce << '\n' << std::flush;
     while (true) {
         for (int i = 0; i < 4; ++i) header[68 + i] = timestamp >> (8 * i);
         for (; next_nonce <= UINT32_MAX; ++next_nonce) {
@@ -106,15 +109,13 @@ try {
             const Hash hash = DoubleHash(prefix, header);
             if (MeetsTarget(hash)) {
                 save();
-                std::printf("FOUND time=%u nonce=%llu hash=%s\n", timestamp,
-                            static_cast<unsigned long long>(next_nonce), DisplayHash(hash).c_str());
+                std::cout << "FOUND time=" << timestamp << " nonce=" << next_nonce << " hash=" << DisplayHash(hash) << '\n';
                 return 0;
             }
             if ((next_nonce + 1) % 10000000 == 0) {
                 // Saving the current nonce repeats one hash at most after a restart.
                 save();
-                std::printf("time=%u searched-through=%llu\n", timestamp, static_cast<unsigned long long>(next_nonce));
-                std::fflush(stdout);
+                std::cout << "time=" << timestamp << " searched-through=" << next_nonce << '\n' << std::flush;
             }
         }
         if (timestamp == UINT32_MAX) throw std::runtime_error("Timestamp space exhausted");
@@ -123,6 +124,6 @@ try {
         save();
     }
 } catch (const std::exception& error) {
-    std::fprintf(stderr, "%s\n", error.what());
+    std::cerr << error.what() << '\n';
     return 1;
 }
