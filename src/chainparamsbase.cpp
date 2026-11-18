@@ -65,6 +65,8 @@ std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const ArgsManager& args,
         return std::make_unique<CBaseChainParams>("", 8332);
     case ChainType::YITCOIN:
         return std::make_unique<CBaseChainParams>("yitcoin", 19432);
+    case ChainType::YITCOIN_REGTEST:
+        return std::make_unique<CBaseChainParams>("yitcoin-regtest", 19532);
     case ChainType::TESTNET:
         return std::make_unique<CBaseChainParams>("testnet3", 18332);
     case ChainType::TESTNET4:

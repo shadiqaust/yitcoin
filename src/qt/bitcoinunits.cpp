@@ -15,7 +15,7 @@ static constexpr auto MAX_DIGITS_BTC = 16;
 
 static bool IsYitcoin()
 {
-    return Params().GetChainType() == ChainType::YITCOIN;
+    return Params().GetChainType() == ChainType::YITCOIN || Params().GetChainType() == ChainType::YITCOIN_REGTEST;
 }
 
 BitcoinUnits::BitcoinUnits(QObject *parent):

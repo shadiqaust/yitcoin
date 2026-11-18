@@ -1,8 +1,9 @@
 # Yitcoin experimental network
 
-This branch adds an opt-in `-chain=yitcoin` network. It is **not a public
-launch or a production-ready release**. Bitcoin's existing networks are
-retained, and omitting `-chain=yitcoin` still selects Bitcoin mainnet.
+This branch adds an opt-in `-chain=yitcoin` launch-chain prototype and a
+separate `-chain=yitcoin-regtest` mode for private mining tests. Neither is a
+public launch or production-ready release. Bitcoin's existing networks are
+retained, and omitting a chain selector still selects Bitcoin mainnet.
 Do not use real funds, Bitcoin wallets, or hardware-wallet seeds for testing.
 
 ## Network identity
@@ -63,13 +64,13 @@ include them, install SQLite development files and omit
 `-DENABLE_WALLET=OFF`; the separate data-directory and RPC safety warnings
 still apply.
 
-The smoke test starts two nodes bound only to loopback, disables seed
-discovery, creates temporary data directories, verifies genesis proof of work
-and peer connectivity, checks that a Yitcoin address is accepted and a Bitcoin
-address is rejected, then shuts both down and removes their temporary data.
-It does not mine spendable coins or prove post-genesis block synchronization.
-The Yitcoin GitHub Actions workflow runs this same build and smoke test for
-pull requests.
+The smoke test starts two Yitcoin nodes bound only to loopback, disables seed
+discovery, creates temporary data directories, verifies mainnet genesis proof
+of work and peer connectivity, and checks address-network separation. It also
+starts a separate `yitcoin-regtest` node, verifies its distinct easy genesis,
+and mines one disposable test block with `generatetoaddress`. All nodes stop and
+temporary data is removed. The mined regtest block does not affect Yitcoin
+mainnet or create launch coins. The GitHub Actions smoke workflow runs this test.
 
 On a machine with limited memory, use `cmake --build build -j1` instead.
 
@@ -129,10 +130,43 @@ For the first server test use the isolated-node command above. Do not open
 firewall ports, configure an automatic startup service, import valuable
 keys, or advertise the server as a public Yitcoin node at this stage.
 
-The upstream `-regtest` network is unchanged and remains suitable for fast,
-disposable mining experiments; it is not a separate Yitcoin testnet.
-Mainnet difficulty-one mining can take billions of hashes per block. A
-successful genesis startup does not demonstrate that block production works.
+## Private mining test mode
+
+Use `-chain=yitcoin-regtest` for disposable, on-demand mining. This is a
+separate Yitcoin-only chain with its own genesis, message magic, `tyit` address
+prefix, data directory, P2P port `19533`, and RPC port `19532`. It has no DNS or
+fixed peers, allows minimum proof-of-work difficulty, and disables retargeting.
+The upstream Bitcoin `-regtest` network and Yitcoin mainnet parameters are
+unchanged. Regtest coins are only test data; they do not count toward the
+planned mainnet reserve and have no value. Coinbase rewards mature after 100
+blocks; mine 101 blocks before testing a spend from a fresh chain.
+
+For mining with a wallet, enable wallet support at build time, then run the
+node in a dedicated directory. Keep RPC local and do not open the P2P port for
+a single-node test:
+
+```sh
+cmake -S . -B build -DBUILD_GUI=OFF -DENABLE_IPC=OFF -DENABLE_WALLET=ON
+cmake --build build -j2
+mkdir -p "$HOME/yitcoin-regtest"
+build/bin/bitcoind -chain=yitcoin-regtest -datadir="$HOME/yitcoin-regtest" \
+  -server -listen=0 -connect=0 -dnsseed=0 -fixedseeds=0 -discover=0 -listenonion=0
+```
+
+In another terminal, create a test wallet, generate an address, and mine one
+block to it:
+
+```sh
+build/bin/bitcoin-cli -chain=yitcoin-regtest -datadir="$HOME/yitcoin-regtest" createwallet miner
+ADDRESS=$(build/bin/bitcoin-cli -chain=yitcoin-regtest -datadir="$HOME/yitcoin-regtest" -rpcwallet=miner getnewaddress)
+build/bin/bitcoin-cli -chain=yitcoin-regtest -datadir="$HOME/yitcoin-regtest" -rpcwallet=miner generatetoaddress 1 "$ADDRESS"
+build/bin/bitcoin-cli -chain=yitcoin-regtest -datadir="$HOME/yitcoin-regtest" getblockchaininfo
+```
+
+This rebuilds only changed targets when the same CMake build directory is
+used. Keep the existing Yitcoin data directory; the regtest mode uses a
+separate directory and genesis. Mainnet difficulty-one mining can take
+billions of hashes per block; do not mine the Yitcoin main chain for this test.
 
 ## Before any public launch
 

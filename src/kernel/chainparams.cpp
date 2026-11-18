@@ -310,6 +310,81 @@ public:
 };
 
 /**
+ * Yitcoin private regression network for disposable, on-demand mining tests.
+ * It has its own genesis, network identity, address prefixes, and no peers.
+ */
+class CYitcoinRegTestParams : public CChainParams
+{
+public:
+    explicit CYitcoinRegTestParams(const RegTestOptions& opts)
+    {
+        m_chain_type = ChainType::YITCOIN_REGTEST;
+        consensus.signet_blocks = false;
+        consensus.signet_challenge.clear();
+        consensus.nSubsidyHalvingInterval = 150;
+        consensus.script_flag_exceptions.clear();
+        consensus.BIP34Height = 1;
+        consensus.BIP34Hash = uint256{};
+        consensus.BIP65Height = 1;
+        consensus.BIP66Height = 1;
+        consensus.CSVHeight = 1;
+        consensus.SegwitHeight = 0;
+        consensus.MinBIP9WarningHeight = 0;
+        consensus.powLimit = uint256{"7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
+        consensus.nPowTargetTimespan = 24 * 60 * 60;
+        consensus.nPowTargetSpacing = 10 * 60;
+        consensus.fPowAllowMinDifficultyBlocks = true;
+        consensus.enforce_BIP94 = opts.enforce_bip94;
+        consensus.fPowNoRetargeting = true;
+
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].min_activation_height = 0;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].threshold = 108;
+        consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].period = 144;
+        consensus.nMinimumChainWork = uint256{};
+        consensus.defaultAssumeValid = uint256{};
+
+        pchMessageStart[0] = 0xfa;
+        pchMessageStart[1] = 0x64;
+        pchMessageStart[2] = 0x7e;
+        pchMessageStart[3] = 0xb6;
+        nDefaultPort = 19533;
+        nPruneAfterHeight = opts.fastprune ? 100 : 1000;
+        m_assumed_blockchain_size = 0;
+        m_assumed_chain_state_size = 0;
+        ApplyDeploymentOptions(opts.dep_opts);
+
+        const CScript genesisOutputScript = CScript() << "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f"_hex << OP_CHECKSIG;
+        genesis = CreateGenesisBlock("Yitcoin private regtest genesis", genesisOutputScript, 1795011865, 0, 0x207fffff, 1, 50 * COIN);
+        consensus.hashGenesisBlock = genesis.GetHash();
+        assert(consensus.hashGenesisBlock == uint256{"0918042ee192a85b8e64ade1a2de367ea07ebedbb2f0f10552ac6103d089576f"});
+        assert(genesis.hashMerkleRoot == uint256{"88a04fd9ab820c0554650e927ebf7972785a051fd34e10de9045f0ffe2efa90e"});
+
+        vFixedSeeds.clear();
+        vSeeds.clear();
+        fDefaultConsistencyChecks = true;
+        m_is_mockable_chain = true;
+        m_assumeutxo_data.clear();
+        chainTxData = ChainTxData{.nTime = 0, .tx_count = 0, .dTxRate = 0.001};
+
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1, 111);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1, 196);
+        base58Prefixes[SECRET_KEY] = std::vector<unsigned char>(1, 239);
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
+        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
+        bech32_hrp = "tyit";
+        silent_payments_hrp = "tysp";
+
+        m_headers_sync_params = HeadersSyncParams{
+            .commitment_period = 275,
+            .redownload_buffer_size = 7017,
+        };
+    }
+};
+
+/**
  * Testnet (v3): public test network which is reset from time to time.
  */
 class CTestNetParams : public CChainParams {
@@ -780,6 +855,11 @@ std::unique_ptr<const CChainParams> CChainParams::Yitcoin()
     return std::make_unique<const CYitcoinParams>();
 }
 
+std::unique_ptr<const CChainParams> CChainParams::YitcoinRegTest(const RegTestOptions& options)
+{
+    return std::make_unique<const CYitcoinRegTestParams>(options);
+}
+
 std::unique_ptr<const CChainParams> CChainParams::TestNet(const TestNetOptions& options)
 {
     return std::make_unique<const CTestNetParams>(options);
@@ -805,6 +885,7 @@ std::optional<ChainType> GetNetworkForMagic(const MessageStartChars& message)
 {
     const auto mainnet_msg = CChainParams::Main()->MessageStart();
     const auto yitcoin_msg = CChainParams::Yitcoin()->MessageStart();
+    const auto yitcoin_regtest_msg = CChainParams::YitcoinRegTest()->MessageStart();
     const auto testnet_msg = CChainParams::TestNet()->MessageStart();
     const auto testnet4_msg = CChainParams::TestNet4()->MessageStart();
     const auto regtest_msg = CChainParams::RegTest()->MessageStart();
@@ -814,6 +895,8 @@ std::optional<ChainType> GetNetworkForMagic(const MessageStartChars& message)
         return ChainType::MAIN;
     } else if (std::ranges::equal(message, yitcoin_msg)) {
         return ChainType::YITCOIN;
+    } else if (std::ranges::equal(message, yitcoin_regtest_msg)) {
+        return ChainType::YITCOIN_REGTEST;
     } else if (std::ranges::equal(message, testnet_msg)) {
         return ChainType::TESTNET;
     } else if (std::ranges::equal(message, testnet4_msg)) {

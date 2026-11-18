@@ -1,4 +1,4 @@
-"""Run two loopback-only Yitcoin nodes against disposable data directories."""
+"""Run loopback-only Yitcoin peer and private-mining smoke tests."""
 
 import argparse
 import hashlib
@@ -13,6 +13,9 @@ import time
 GENESIS_TIME = 1795011864
 GENESIS_NONCE = 210259129
 GENESIS_HASH = "00000000fac67770c911525f34ff956e78a64bc4cb73a6aa493634bea5545b63"
+REGTEST_GENESIS_TIME = 1795011865
+REGTEST_GENESIS_NONCE = 0
+REGTEST_GENESIS_HASH = "0918042ee192a85b8e64ade1a2de367ea07ebedbb2f0f10552ac6103d089576f"
 BECH32_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
 
@@ -63,9 +66,9 @@ def main():
         clients = []
         try:
             ports = set()
-            while len(ports) < 4:
+            while len(ports) < 5:
                 ports.add(free_port())
-            p2p0, rpc0, p2p1, rpc1 = ports
+            p2p0, rpc0, p2p1, rpc1, regtest_rpc = ports
             for index, (p2p, rpc) in enumerate(((p2p0, rpc0), (p2p1, rpc1))):
                 datadir = Path(root) / str(index)
                 datadir.mkdir()
@@ -137,9 +140,45 @@ def main():
                 return True
 
             wait_for(peers_ready, "peer version handshake")
+
+            regtest_datadir = Path(root) / "regtest"
+            regtest_datadir.mkdir()
+            regtest_common = ["-chain=yitcoin-regtest", f"-datadir={regtest_datadir}", f"-rpcport={regtest_rpc}"]
+            regtest_command = [
+                str(bindir / "bitcoind"), *regtest_common,
+                "-server", "-listen=0", "-connect=0", "-dnsseed=0", "-fixedseeds=0",
+                "-discover=0", "-listenonion=0", "-natpmp=0",
+                "-rpcbind=127.0.0.1", "-rpcallowip=127.0.0.1",
+            ]
+            processes.append(subprocess.Popen(regtest_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+            clients.append([str(bindir / "bitcoin-cli"), *regtest_common])
+            wait_for(lambda: call(2, "getblockchaininfo")["chain"] == "yitcoin-regtest", "private Yitcoin regtest RPC")
+
+            regtest_info = call(2, "getblockchaininfo")
+            assert regtest_info["blocks"] == 0, regtest_info
+            regtest_genesis_hash = call(2, "getblockhash", "0")
+            assert regtest_genesis_hash == REGTEST_GENESIS_HASH
+            regtest_header = bytes.fromhex(call(2, "getblockheader", regtest_genesis_hash, "false"))
+            regtest_digest = hashlib.sha256(hashlib.sha256(regtest_header).digest()).digest()
+            assert regtest_digest[::-1].hex() == regtest_genesis_hash
+            assert int.from_bytes(regtest_header[68:72], "little") == REGTEST_GENESIS_TIME
+            assert int.from_bytes(regtest_header[76:80], "little") == REGTEST_GENESIS_NONCE
+            regtest_bits = int.from_bytes(regtest_header[72:76], "little")
+            assert regtest_bits == 0x207FFFFF, hex(regtest_bits)
+            regtest_target = (regtest_bits & 0x7FFFFF) << (8 * ((regtest_bits >> 24) - 3))
+            assert int.from_bytes(regtest_digest, "little") <= regtest_target, "Invalid private regtest genesis proof of work"
+
+            test_program = hashlib.sha256(b"Yitcoin private mining smoke fixture").digest()[:20]
+            test_address = segwit_address("tyit", 0, test_program)
+            assert call(2, "validateaddress", test_address)["isvalid"]
+            mined_hashes = call(2, "generatetoaddress", "1", test_address)
+            assert len(mined_hashes) == 1, mined_hashes
+            mined_info = call(2, "getblockchaininfo")
+            assert mined_info["blocks"] == 1, mined_info
+            assert mined_info["bestblockhash"] == mined_hashes[0]
             print(
-                "PASS: two local nodes, unique genesis PoW, peer handshake, "
-                "Yitcoin address acceptance, and Bitcoin address rejection"
+                "PASS: two Yitcoin peers, mainnet genesis PoW, private-regtest genesis, "
+                "one on-demand mined test block, and network-specific addresses"
             )
         finally:
             for process in processes:

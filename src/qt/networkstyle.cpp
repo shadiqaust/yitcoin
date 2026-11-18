@@ -19,6 +19,7 @@ static const struct {
 } network_styles[] = {
     {ChainType::MAIN, QAPP_APP_NAME_DEFAULT, 0, 0},
     {ChainType::YITCOIN, "Yitcoin", 20, 15},
+    {ChainType::YITCOIN_REGTEST, "Yitcoin Regtest", 160, 30},
     {ChainType::TESTNET, QAPP_APP_NAME_TESTNET, 70, 30},
     {ChainType::TESTNET4, QAPP_APP_NAME_TESTNET4, 70, 30},
     {ChainType::SIGNET, QAPP_APP_NAME_SIGNET, 35, 15},

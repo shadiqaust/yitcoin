@@ -438,8 +438,8 @@ static RPCMethod addconnection()
         },
         [](const RPCMethod& self, const JSONRPCRequest& request) -> UniValue
 {
-    if (Params().GetChainType() != ChainType::REGTEST) {
-        throw std::runtime_error("addconnection is for regression testing (-regtest mode) only.");
+    if (Params().GetChainType() != ChainType::REGTEST && Params().GetChainType() != ChainType::YITCOIN_REGTEST) {
+        throw std::runtime_error("addconnection is for regression testing (-regtest or -chain=yitcoin-regtest) only.");
     }
 
     const std::string address = request.params[0].get_str();

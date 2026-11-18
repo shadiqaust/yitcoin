@@ -812,6 +812,18 @@ BOOST_AUTO_TEST_CASE(util_YitcoinChainType)
     BOOST_CHECK(test_args.GetChainType() == ChainType::YITCOIN);
 }
 
+BOOST_AUTO_TEST_CASE(util_YitcoinRegTestChainType)
+{
+    TestArgsManager test_args;
+    test_args.SetupArgs({std::make_pair("-chain", ArgsManager::ALLOW_ANY)});
+    const char* argv[] = {"cmd", "-chain=yitcoin-regtest"};
+    std::string error;
+
+    BOOST_CHECK(test_args.ParseParameters(2, argv, error));
+    BOOST_CHECK_EQUAL(test_args.GetChainTypeString(), "yitcoin-regtest");
+    BOOST_CHECK(test_args.GetChainType() == ChainType::YITCOIN_REGTEST);
+}
+
 // Test different ways settings can be merged, and verify results. This test can
 // be used to confirm that updates to settings code don't change behavior
 // unintentionally.

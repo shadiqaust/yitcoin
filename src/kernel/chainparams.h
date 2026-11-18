@@ -175,6 +175,8 @@ public:
     static std::unique_ptr<const CChainParams> Main(const MainNetOptions& options);
     static std::unique_ptr<const CChainParams> Main() { const MainNetOptions opts{}; return Main(opts); }
     static std::unique_ptr<const CChainParams> Yitcoin();
+    static std::unique_ptr<const CChainParams> YitcoinRegTest(const RegTestOptions& options);
+    static std::unique_ptr<const CChainParams> YitcoinRegTest() { const RegTestOptions opts{}; return YitcoinRegTest(opts); }
     static std::unique_ptr<const CChainParams> TestNet(const TestNetOptions& options);
     static std::unique_ptr<const CChainParams> TestNet() { const TestNetOptions opts{}; return TestNet(opts); }
     static std::unique_ptr<const CChainParams> TestNet4(const TestNetOptions& options);

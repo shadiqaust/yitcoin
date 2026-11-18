@@ -155,6 +155,7 @@ std::list<SectionInfo> ArgsManager::GetUnrecognizedSections() const
     // Section names to be recognized in the config file.
     static const std::set<std::string> available_sections{
         ChainTypeToString(ChainType::YITCOIN),
+        ChainTypeToString(ChainType::YITCOIN_REGTEST),
         ChainTypeToString(ChainType::REGTEST),
         ChainTypeToString(ChainType::SIGNET),
         ChainTypeToString(ChainType::TESTNET),

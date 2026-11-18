@@ -12,6 +12,7 @@
 enum class ChainType {
     MAIN,
     YITCOIN,
+    YITCOIN_REGTEST,
     TESTNET,
     SIGNET,
     REGTEST,

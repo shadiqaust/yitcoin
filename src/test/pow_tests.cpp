@@ -4,6 +4,7 @@
 
 #include <chain.h>
 #include <chainparams.h>
+#include <chainparamsbase.h>
 #include <pow.h>
 #include <test/util/random.h>
 #include <test/util/common.h>
@@ -300,6 +301,43 @@ BOOST_AUTO_TEST_CASE(ChainParams_YITCOIN_identity)
     BOOST_CHECK_EQUAL(params->GetConsensus().nPowTargetSpacing, bitcoin->GetConsensus().nPowTargetSpacing);
     BOOST_CHECK_EQUAL(params->GetConsensus().nPowTargetTimespan, bitcoin->GetConsensus().nPowTargetTimespan);
     BOOST_CHECK_EQUAL(params->GetConsensus().nSubsidyHalvingInterval, bitcoin->GetConsensus().nSubsidyHalvingInterval);
+}
+
+BOOST_AUTO_TEST_CASE(ChainParams_YITCOIN_REGTEST_sanity)
+{
+    sanity_check_chainparams(*m_node.args, ChainType::YITCOIN_REGTEST);
+}
+
+BOOST_AUTO_TEST_CASE(ChainParams_YITCOIN_REGTEST_identity)
+{
+    const auto params = CreateChainParams(*m_node.args, ChainType::YITCOIN_REGTEST);
+    const auto yitcoin = CreateChainParams(*m_node.args, ChainType::YITCOIN);
+    const auto bitcoin_regtest = CreateChainParams(*m_node.args, ChainType::REGTEST);
+    const auto base_params = CreateBaseChainParams(*m_node.args, ChainType::YITCOIN_REGTEST);
+    BOOST_CHECK(params->IsTestChain());
+    BOOST_CHECK(params->MineBlocksOnDemand());
+    BOOST_CHECK(params->IsMockableChain());
+    BOOST_CHECK(params->DefaultConsistencyChecks());
+    BOOST_CHECK(GetNetworkForMagic(params->MessageStart()) == ChainType::YITCOIN_REGTEST);
+    BOOST_CHECK(params->MessageStart() != yitcoin->MessageStart());
+    BOOST_CHECK(params->MessageStart() != bitcoin_regtest->MessageStart());
+    BOOST_CHECK(params->GenesisBlock().GetHash() != yitcoin->GenesisBlock().GetHash());
+    BOOST_CHECK(params->GenesisBlock().GetHash() != bitcoin_regtest->GenesisBlock().GetHash());
+    BOOST_CHECK_EQUAL(params->GetChainTypeString(), "yitcoin-regtest");
+    BOOST_CHECK_EQUAL(params->GenesisBlock().GetHash().GetHex(), "0918042ee192a85b8e64ade1a2de367ea07ebedbb2f0f10552ac6103d089576f");
+    BOOST_CHECK_EQUAL(params->GenesisBlock().hashMerkleRoot.GetHex(), "88a04fd9ab820c0554650e927ebf7972785a051fd34e10de9045f0ffe2efa90e");
+    BOOST_CHECK_EQUAL(params->GenesisBlock().nTime, 1795011865);
+    BOOST_CHECK_EQUAL(params->GenesisBlock().nNonce, 0);
+    BOOST_CHECK_EQUAL(params->GenesisBlock().nBits, 0x207fffff);
+    BOOST_CHECK(CheckProofOfWork(params->GenesisBlock().GetHash(), params->GenesisBlock().nBits, params->GetConsensus()));
+    BOOST_CHECK_EQUAL(params->GetDefaultPort(), 19533);
+    BOOST_CHECK_EQUAL(base_params->RPCPort(), 19532);
+    BOOST_CHECK_EQUAL(base_params->DataDir(), "yitcoin-regtest");
+    BOOST_CHECK_EQUAL(params->Bech32HRP(), "tyit");
+    BOOST_CHECK(params->DNSSeeds().empty());
+    BOOST_CHECK(params->FixedSeeds().empty());
+    BOOST_CHECK(params->GetConsensus().fPowAllowMinDifficultyBlocks);
+    BOOST_CHECK_EQUAL(params->GetConsensus().nSubsidyHalvingInterval, 150);
 }
 
 BOOST_AUTO_TEST_CASE(ChainParams_REGTEST_sanity)

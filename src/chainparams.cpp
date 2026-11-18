@@ -140,6 +140,11 @@ std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, c
     }
     case ChainType::YITCOIN:
         return CChainParams::Yitcoin();
+    case ChainType::YITCOIN_REGTEST: {
+        auto opts = CChainParams::RegTestOptions{};
+        ReadRegTestArgs(args, opts);
+        return CChainParams::YitcoinRegTest(opts);
+    }
     case ChainType::TESTNET: {
         auto opts = CChainParams::TestNetOptions{};
         ReadTestNetArgs(args, opts);
