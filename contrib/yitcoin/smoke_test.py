@@ -130,16 +130,16 @@ def main():
                 while time.monotonic() < deadline:
                     if any(process.poll() is not None for process in node_processes):
                         raise RuntimeError("A test node exited before the smoke test finished")
-                    for name, process, output_path in watched_processes:
-                        if process.poll() is not None:
-                            raise RuntimeError(
-                                f"{name} exited with code {process.returncode}:\n{log_tail(output_path)}"
-                            )
                     try:
                         if predicate():
                             return
                     except (RuntimeError, subprocess.TimeoutExpired) as error:
                         last_error = error
+                    for name, process, output_path in watched_processes:
+                        if process.poll() is not None:
+                            raise RuntimeError(
+                                f"{name} exited with code {process.returncode}:\n{log_tail(output_path)}"
+                            )
                     time.sleep(0.25)
                 output = "".join(
                     f"\n{name} output:\n{log_tail(output_path)}"
@@ -277,7 +277,8 @@ def main():
                     "cpuminer owner-reward block",
                     watched_processes=(("cpuminer", miner, miner_log),),
                 )
-                miner.terminate()
+                if miner.poll() is None:
+                    miner.terminate()
                 miner.wait(timeout=30)
                 # Do not include a deliberately stopped miner in node-liveness checks.
                 processes.remove(miner)
