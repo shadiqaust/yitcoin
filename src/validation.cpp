@@ -17,6 +17,7 @@
 #include <consensus/tx_check.h>
 #include <consensus/tx_verify.h>
 #include <consensus/validation.h>
+#include <consensus/yitcoin.h>
 #include <cuckoocache.h>
 #include <flatfile.h>
 #include <hash.h>
@@ -2680,6 +2681,27 @@ bool Chainstate::ConnectBlock(const CBlock& block, BlockValidationState& state, 
              Ticks<MillisecondsDouble>(m_chainman.time_connect) / m_chainman.num_blocks_total);
 
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, params.GetConsensus());
+    const auto& consensus_params{params.GetConsensus()};
+    if (pindex->nHeight >= consensus_params.yitcoin_owner_reward_height &&
+        !consensus_params.yitcoin_owner_reward_script.empty()) {
+        const CAmount owner_reward{YitcoinOwnerReward(GetBlockSubsidy(pindex->nHeight, consensus_params))};
+        if (owner_reward > 0) {
+            CAmount owner_paid{0};
+            const CScript owner_script{consensus_params.yitcoin_owner_reward_script.begin(),
+                                       consensus_params.yitcoin_owner_reward_script.end()};
+            for (const auto& output : block.vtx[0]->vout) {
+                if (output.scriptPubKey == owner_script) {
+                    owner_paid += output.nValue;
+                }
+            }
+            if (owner_paid < owner_reward && state.IsValid()) {
+                state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-cb-owner-reward",
+                              strprintf("coinbase pays less than the required Yitcoin owner reward "
+                                        "(actual=%d vs required=%d)",
+                                        owner_paid, owner_reward));
+            }
+        }
+    }
     if (block.vtx[0]->GetValueOut() > blockReward && state.IsValid()) {
         state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-cb-amount",
                       strprintf("coinbase pays too much (actual=%d vs limit=%d)", block.vtx[0]->GetValueOut(), blockReward));

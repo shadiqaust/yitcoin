@@ -48,15 +48,35 @@ def main():
                         raise
                     time.sleep(1)
             assert info["chain"] == "yitcoin-regtest", info
+            try:
+                rpc("getblocktemplate", '{"rules":["segwit"]}')
+                raise AssertionError("GBT accepted a client that did not advertise owner-reward support")
+            except subprocess.CalledProcessError as error:
+                assert "yitcoin-owner-reward" in error.stderr, error.stderr
+            template = rpc("getblocktemplate", '{"rules":["segwit"],"capabilities":["yitcoin-owner-reward"]}')
+            assert template["yitcoin_owner_reward"] == 100_000_000, template
+            owner_script = "0014c4b1e20b9ab28e50dcfd7238974f83ae0d5699a6"
+            assert template["yitcoin_owner_script"] == owner_script, template
             rpc("createwallet", "gui-smoke")
             address = rpc("-rpcwallet=gui-smoke", "getnewaddress")
             assert address.startswith("tyit1"), address
             hashes = rpc("generatetoaddress", "1", address)
             assert len(hashes) == 1, hashes
             assert rpc("getblockchaininfo")["blocks"] == 1
+            block = rpc("getblock", hashes[0], "2")
+            coinbase_outputs = block["tx"][0]["vout"]
+            paid_outputs = [output for output in coinbase_outputs if output["value"] > 0]
+            assert sorted(output["value"] for output in paid_outputs) == [1, 49], paid_outputs
+            assert any(
+                output["scriptPubKey"]["hex"] == owner_script and output["value"] == 1
+                for output in paid_outputs
+            ), paid_outputs
             balances = rpc("-rpcwallet=gui-smoke", "getbalances")
-            assert balances["mine"]["immature"] == 50, balances
-            print("PASS: packaged GUI launches, serves RPC, creates a wallet and receives a private test reward")
+            assert balances["mine"]["immature"] == 49, balances
+            print(
+                "PASS: packaged GUI launches, serves RPC, creates a wallet, "
+                "and validates the 49/1 Yitcoin reward split"
+            )
         finally:
             if gui.poll() is None:
                 try:

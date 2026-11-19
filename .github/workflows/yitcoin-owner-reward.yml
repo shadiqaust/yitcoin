@@ -1,0 +1,45 @@
+name: Yitcoin owner reward integration
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "contrib/yitcoin/**"
+      - ".github/workflows/yitcoin-owner-reward.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  owner-reward:
+    name: Validate owner payouts and mine with cpuminer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check out the compatible miner at a fixed commit
+        uses: actions/checkout@v6
+        with:
+          repository: shadiqaust/cpuminer-opt
+          ref: 6b35302afac26659d77e13af14fa1e15f86a4f41
+          path: miner
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            build-essential cmake python3 libboost-dev autoconf automake \
+            libtool pkg-config libcurl4-openssl-dev libgmp-dev libjansson-dev libssl-dev
+      - name: Build the headless Yitcoin node
+        run: |
+          cmake -S . -B build -DBUILD_GUI=OFF -DENABLE_IPC=OFF \
+            -DENABLE_WALLET=OFF -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --target bitcoind bitcoin-cli -j2
+      - name: Build the compatible miner
+        working-directory: miner
+        run: |
+          ./autogen.sh
+          ./configure --with-curl=/usr
+          make -j2
+      - name: Test valid and invalid payouts and real miner submission
+        run: python3 contrib/yitcoin/smoke_test.py --bindir build/bin --miner miner/cpuminer

@@ -247,6 +247,11 @@ public:
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 210000;
+        consensus.yitcoin_owner_reward_height = 200;
+        consensus.yitcoin_owner_reward_script = {
+            0x00, 0x14, 0xc4, 0xb1, 0xe2, 0x0b, 0x9a, 0xb2, 0x8e, 0x50, 0xdc,
+            0xfd, 0x72, 0x38, 0x97, 0x4f, 0x83, 0xae, 0x0d, 0x56, 0x99, 0xa6,
+        };
         consensus.script_flag_exceptions.clear();
         consensus.BIP34Height = 227931;
         consensus.BIP34Hash = uint256{};
@@ -322,6 +327,11 @@ public:
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 150;
+        consensus.yitcoin_owner_reward_height = 1;
+        consensus.yitcoin_owner_reward_script = {
+            0x00, 0x14, 0xc4, 0xb1, 0xe2, 0x0b, 0x9a, 0xb2, 0x8e, 0x50, 0xdc,
+            0xfd, 0x72, 0x38, 0x97, 0x4f, 0x83, 0xae, 0x0d, 0x56, 0x99, 0xa6,
+        };
         consensus.script_flag_exceptions.clear();
         consensus.BIP34Height = 1;
         consensus.BIP34Hash = uint256{};

@@ -5,19 +5,19 @@
 #include <chainparams.h>
 #include <consensus/amount.h>
 #include <consensus/merkle.h>
+#include <consensus/yitcoin.h>
 #include <core_io.h>
 #include <hash.h>
 #include <net.h>
 #include <signet.h>
+#include <test/util/setup_common.h>
 #include <uint256.h>
 #include <util/chaintype.h>
 #include <validation.h>
 
-#include <string>
-
-#include <test/util/setup_common.h>
-
 #include <boost/test/unit_test.hpp>
+
+#include <string>
 
 BOOST_FIXTURE_TEST_SUITE(validation_tests, BasicTestingSetup)
 
@@ -51,6 +51,18 @@ BOOST_AUTO_TEST_CASE(block_subsidy_test)
     TestBlockSubsidyHalvings(chainParams->GetConsensus()); // As in main
     TestBlockSubsidyHalvings(150); // As in regtest
     TestBlockSubsidyHalvings(1000); // Just another interval
+}
+
+BOOST_AUTO_TEST_CASE(yitcoin_owner_reward_test)
+{
+    BOOST_CHECK_EQUAL(YitcoinOwnerReward(50 * COIN), COIN);
+    BOOST_CHECK_EQUAL(YitcoinOwnerReward(25 * COIN), COIN / 2);
+    BOOST_CHECK_EQUAL(YitcoinOwnerReward(1), 0);
+
+    const auto yitcoin_params{CreateChainParams(*m_node.args, ChainType::YITCOIN)};
+    const auto yitcoin_regtest_params{CreateChainParams(*m_node.args, ChainType::YITCOIN_REGTEST)};
+    BOOST_CHECK_EQUAL(yitcoin_params->GetConsensus().yitcoin_owner_reward_height, 200);
+    BOOST_CHECK_EQUAL(yitcoin_regtest_params->GetConsensus().yitcoin_owner_reward_height, 1);
 }
 
 BOOST_AUTO_TEST_CASE(subsidy_limit_test)
