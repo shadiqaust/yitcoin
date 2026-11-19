@@ -17,6 +17,7 @@
 #include <consensus/merkle.h>
 #include <consensus/params.h>
 #include <consensus/validation.h>
+#include <consensus/yitcoin.h>
 #include <core_io.h>
 #include <crypto/hex_base.h>
 #include <interfaces/types.h>
@@ -659,7 +660,7 @@ static RPCMethod getblocktemplate()
                 {"mode", RPCArg::Type::STR, /* treat as named arg */ RPCArg::Optional::OMITTED, "This must be set to \"template\", \"proposal\" (see BIP 23), or omitted"},
                 {"capabilities", RPCArg::Type::ARR, /* treat as named arg */ RPCArg::Optional::OMITTED, "A list of strings",
                 {
-                    {"str", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "client side supported feature, 'longpoll', 'coinbasevalue', 'proposal', 'serverlist', 'workid'"},
+                    {"str", RPCArg::Type::STR, RPCArg::Optional::OMITTED, "client side supported feature, 'longpoll', 'coinbasevalue', 'proposal', 'serverlist', 'workid', 'yitcoin-owner-reward'"},
                 }},
                 {"rules", RPCArg::Type::ARR, RPCArg::Optional::NO, "A list of strings",
                 {
@@ -711,7 +712,9 @@ static RPCMethod getblocktemplate()
                 {
                     {RPCResult::Type::STR_HEX, "key", "values must be in the coinbase (keys may be ignored)"},
                 }},
-                {RPCResult::Type::NUM, "coinbasevalue", "maximum allowable input to coinbase transaction, including the generation award and transaction fees (in satoshis)"},
+                {RPCResult::Type::NUM, "coinbasevalue", "maximum allowable total coinbase value, including the generation award and transaction fees (in satoshis)"},
+                {RPCResult::Type::NUM, "yitcoin_owner_reward", /*optional=*/true, "required owner output amount in satoshis; requires the yitcoin-owner-reward capability"},
+                {RPCResult::Type::STR_HEX, "yitcoin_owner_script", /*optional=*/true, "required owner output scriptPubKey in hexadecimal"},
                 {RPCResult::Type::STR, "longpollid", "an id to include with a request to longpoll on an update to this template"},
                 {RPCResult::Type::STR, "target", "The hash target"},
                 {RPCResult::Type::NUM_TIME, "mintime", "The minimum timestamp appropriate for the next block time, expressed in " + UNIX_EPOCH_TIME + ". Adjusted for the proposed BIP94 timewarp rule."},
@@ -743,6 +746,7 @@ static RPCMethod getblocktemplate()
     std::string strMode = "template";
     UniValue lpval = NullUniValue;
     std::set<std::string> setClientRules;
+    std::set<std::string> setClientCapabilities;
     if (!request.params[0].isNull())
     {
         const UniValue& oparam = request.params[0].get_obj();
@@ -786,6 +790,13 @@ static RPCMethod getblocktemplate()
             for (unsigned int i = 0; i < aClientRules.size(); ++i) {
                 const UniValue& v = aClientRules[i];
                 setClientRules.insert(v.get_str());
+            }
+        }
+        const UniValue& aClientCapabilities = oparam.find_value("capabilities");
+        if (aClientCapabilities.isArray()) {
+            for (unsigned int i = 0; i < aClientCapabilities.size(); ++i) {
+                const UniValue& v = aClientCapabilities[i];
+                setClientCapabilities.insert(v.get_str());
             }
         }
     }
@@ -923,6 +934,9 @@ static RPCMethod getblocktemplate()
     const bool fPreSegWit = !DeploymentActiveAfter(pindexPrev, chainman, Consensus::DEPLOYMENT_SEGWIT);
 
     UniValue aCaps(UniValue::VARR); aCaps.push_back("proposal");
+    if (!consensusParams.yitcoin_owner_reward_script.empty()) {
+        aCaps.push_back("yitcoin-owner-reward");
+    }
 
     UniValue transactions(UniValue::VARR);
     std::map<Txid, int64_t> setTxIndex;
@@ -1020,6 +1034,17 @@ static RPCMethod getblocktemplate()
         }
     }
 
+    const int block_height{pindexPrev->nHeight + 1};
+    const bool owner_reward_active{block_height >= consensusParams.yitcoin_owner_reward_height};
+    const CAmount owner_reward{owner_reward_active
+                                   ? YitcoinOwnerReward(GetBlockSubsidy(block_height, consensusParams))
+                                   : 0};
+    if (owner_reward > 0 && !setClientCapabilities.contains("yitcoin-owner-reward")) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER,
+                           "Yitcoin owner reward is active; mining client must support "
+                           "the yitcoin-owner-reward GBT capability");
+    }
+
     result.pushKV("version", block_header.nVersion);
     result.pushKV("rules", std::move(aRules));
     result.pushKV("vbavailable", std::move(vbavailable));
@@ -1028,7 +1053,11 @@ static RPCMethod getblocktemplate()
     result.pushKV("previousblockhash", block_header.hashPrevBlock.GetHex());
     result.pushKV("transactions", std::move(transactions));
     result.pushKV("coinbaseaux", std::move(aux));
-    result.pushKV("coinbasevalue", block_template->block.vtx[0]->vout[0].nValue);
+    result.pushKV("coinbasevalue", block_template->block.vtx[0]->GetValueOut());
+    if (owner_reward > 0) {
+        result.pushKV("yitcoin_owner_reward", owner_reward);
+        result.pushKV("yitcoin_owner_script", HexStr(consensusParams.yitcoin_owner_reward_script));
+    }
     result.pushKV("longpollid", tip.GetHex() + ToString(nTransactionsUpdatedLast));
     result.pushKV("target", hashTarget.GetHex());
     result.pushKV("mintime", GetMinimumTime(pindexPrev, consensusParams.DifficultyAdjustmentInterval()));
@@ -1055,9 +1084,10 @@ static RPCMethod getblocktemplate()
         result.pushKV("signet_challenge", HexStr(consensusParams.signet_challenge));
     }
 
-    if (const auto& coinbase{block_template->m_coinbase_tx}; coinbase.required_outputs.size() > 0) {
-        CHECK_NONFATAL(coinbase.required_outputs.size() == 1); // Only one output is currently expected
-        result.pushKV("default_witness_commitment", HexStr(coinbase.required_outputs[0].scriptPubKey));
+    if (const int witness_commitment_index{GetWitnessCommitmentIndex(block_template->block)};
+        witness_commitment_index != NO_WITNESS_COMMITMENT) {
+        result.pushKV("default_witness_commitment",
+                      HexStr(block_template->block.vtx[0]->vout[witness_commitment_index].scriptPubKey));
     }
 
     return result;

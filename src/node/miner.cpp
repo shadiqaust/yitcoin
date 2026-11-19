@@ -14,6 +14,7 @@
 #include <consensus/params.h>
 #include <consensus/tx_verify.h>
 #include <consensus/validation.h>
+#include <consensus/yitcoin.h>
 #include <node/blockstorage.h>
 #include <node/mining_args.h>
 #include <node/mining_types.h>
@@ -175,13 +176,22 @@ util::NotNullUniquePtr<CBlockTemplate> BlockAssembler::CreateNewBlock()
     coinbaseTx.vin[0].nSequence = CTxIn::MAX_SEQUENCE_NONFINAL; // Make sure timelock is enforced.
     coinbase_tx.sequence = coinbaseTx.vin[0].nSequence;
 
-    // Add an output that spends the full coinbase reward.
-    coinbaseTx.vout.resize(1);
+    // After activation, the owner share is a required consensus output. The
+    // remaining subsidy and all transaction fees are available to the miner.
+    const CAmount subsidy{GetBlockSubsidy(nHeight, chainparams.GetConsensus())};
+    const CAmount owner_reward{
+        nHeight >= chainparams.GetConsensus().yitcoin_owner_reward_height ? YitcoinOwnerReward(subsidy) : 0};
+    coinbaseTx.vout.resize(owner_reward > 0 ? 2 : 1);
     coinbaseTx.vout[0].scriptPubKey = m_options.coinbase_output_script;
-    // Block subsidy + fees
-    const CAmount block_reward{nFees + GetBlockSubsidy(nHeight, chainparams.GetConsensus())};
-    coinbaseTx.vout[0].nValue = block_reward;
-    coinbase_tx.block_reward_remaining = block_reward;
+    const CAmount block_reward{nFees + subsidy};
+    coinbaseTx.vout[0].nValue = block_reward - owner_reward;
+    coinbase_tx.block_reward_remaining = block_reward - owner_reward;
+    if (owner_reward > 0) {
+        const auto& owner_script_bytes{chainparams.GetConsensus().yitcoin_owner_reward_script};
+        const CScript owner_script{owner_script_bytes.begin(), owner_script_bytes.end()};
+        coinbaseTx.vout[1] = CTxOut{owner_reward, owner_script};
+        coinbase_tx.required_outputs.push_back(coinbaseTx.vout[1]);
+    }
 
     // Start the coinbase scriptSig with the block height as required by BIP34.
     // Mining clients are expected to append extra data to this prefix, so

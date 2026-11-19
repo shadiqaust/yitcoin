@@ -88,6 +88,10 @@ struct BIP9Deployment {
 struct Params {
     uint256 hashGenesisBlock;
     int nSubsidyHalvingInterval;
+    /** First block height requiring the Yitcoin owner reward. Disabled by default. */
+    int yitcoin_owner_reward_height{std::numeric_limits<int>::max()};
+    /** ScriptPubKey that must receive the Yitcoin owner reward after activation. */
+    std::vector<uint8_t> yitcoin_owner_reward_script;
     /**
      * Hashes of blocks that
      * - are known to be consensus valid, and
