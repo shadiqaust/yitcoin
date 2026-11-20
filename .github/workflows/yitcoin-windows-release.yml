@@ -24,12 +24,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-test-release:
+  build-test:
+    name: Build and test Windows GUI
     if: github.repository == 'shadiqaust/yitcoin'
     runs-on: windows-2025-vs2026
     timeout-minutes: 180
     permissions:
-      contents: write
+      contents: read
     env:
       PYTHONUTF8: 1
       QT_ASSUME_STDERR_HAS_CONSOLE: 1
@@ -59,7 +60,19 @@ jobs:
           path: |
             ~/AppData/Local/vcpkg/downloads
             ~/AppData/Local/vcpkg/archives
-          key: yitcoin-windows-gui-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-v1
+          key: yitcoin-windows-gui-vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}-v2
+
+      - name: Restore package-stage build checkpoint
+        id: build-checkpoint
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            build/bin/Release
+            build/vcpkg_installed
+            build/vcpkg-manifest-install.log
+          key: yitcoin-windows-gui-package-${{ runner.os }}-${{ github.sha }}-v1
+          restore-keys: |
+            yitcoin-windows-gui-package-${{ runner.os }}-
 
       - name: Configure wallet-enabled GUI
         run: |
@@ -92,21 +105,90 @@ jobs:
           py -3 contrib/yitcoin/smoke_test.py --bindir build/bin/Release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Save package-stage build checkpoint
+        if: steps.build-checkpoint.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            build/bin/Release
+            build/vcpkg_installed
+            build/vcpkg-manifest-install.log
+          key: yitcoin-windows-gui-package-${{ runner.os }}-${{ github.sha }}-v1
+
+      - name: Save build failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-build-diagnostics-${{ github.run_id }}
+          path: |
+            build/vcpkg-manifest-install.log
+            build/Testing/Temporary/LastTest.log
+            build/CMakeFiles/CMakeConfigureLog.yaml
+          if-no-files-found: ignore
+
+  package-test:
+    name: Package, upload, and test Windows GUI
+    needs: build-test
+    if: github.repository == 'shadiqaust/yitcoin'
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      PYTHONUTF8: 1
+      QT_ASSUME_STDERR_HAS_CONSOLE: 1
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Import Visual Studio environment
+        run: |
+          py -3 .github/ci-windows.py standard github_import_vs_env
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Restore package-stage build checkpoint
+        id: package-checkpoint
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            build/bin/Release
+            build/vcpkg_installed
+            build/vcpkg-manifest-install.log
+          key: yitcoin-windows-gui-package-${{ runner.os }}-${{ github.sha }}-v1
+
+      - name: Verify package checkpoint is available
+        run: |
+          if ("${{ steps.package-checkpoint.outputs.cache-hit }}" -ne "true") {
+            throw "The successful build checkpoint was not restored; refusing to package missing files."
+          }
+
       - name: Package GUI and runtime dependencies
         run: |
+          $ErrorActionPreference = "Stop"
           $package = New-Item -ItemType Directory -Force dist/yitcoin-windows-x64
+          Write-Host "Copying executables and runtime DLLs from build/bin/Release"
           Copy-Item build/bin/Release/*.exe $package
           Get-ChildItem build/bin/Release -Filter *.dll | Copy-Item -Destination $package
           Get-ChildItem $package -Filter '*test*.exe' | Remove-Item
           Get-ChildItem $package -Filter '*bench*.exe' | Remove-Item
           Get-ChildItem $package -Filter '*fuzz*.exe' | Remove-Item
+          Write-Host "Searching the restored vcpkg tree for windeployqt.exe"
           $deploy = Get-ChildItem build/vcpkg_installed -Filter windeployqt.exe -Recurse |
             Where-Object { $_.FullName -notmatch '\\debug\\' } | Select-Object -First 1
-          if (-not $deploy) { throw 'Qt deployment tool was not found' }
-          & $deploy.FullName --release --no-translations --compiler-runtime "$package/bitcoin-qt.exe"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not $deploy) { throw 'Qt deployment tool was not found under build/vcpkg_installed' }
+          Write-Host "Running $($deploy.FullName) for $package/bitcoin-qt.exe"
+          $deployOutput = & $deploy.FullName --release --no-translations --compiler-runtime "$package/bitcoin-qt.exe" 2>&1
+          $deployExitCode = $LASTEXITCODE
+          $deployOutput | ForEach-Object { Write-Host $_ }
+          if ($deployExitCode -ne 0) {
+            throw "windeployqt failed with exit code $deployExitCode"
+          }
           if (-not (Test-Path "$package/platforms/qwindows.dll")) {
-            throw 'Windows Qt platform plugin is missing'
+            throw 'Windows Qt platform plugin is missing after windeployqt'
           }
           Copy-Item COPYING "$package/COPYING.txt"
           @'
@@ -146,21 +228,37 @@ jobs:
           "@ | Set-Content "$package/README.txt" -Encoding utf8
           git rev-parse HEAD | Set-Content "$package/SOURCE_COMMIT.txt" -Encoding ascii
 
+      - name: Create Windows GUI test candidate
+        run: |
+          Compress-Archive -Path dist/yitcoin-windows-x64 -DestinationPath dist/yitcoin-windows-x64-test-candidate.zip -Force
+          $hash = (Get-FileHash dist/yitcoin-windows-x64-test-candidate.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  yitcoin-windows-x64-test-candidate.zip" | Set-Content dist/yitcoin-windows-x64-test-candidate.SHA256SUMS.txt -Encoding ascii
+
+      - name: Upload Windows GUI test candidate
+        uses: actions/upload-artifact@v7
+        with:
+          name: yitcoin-windows-x64-test-candidate-${{ github.run_id }}
+          path: |
+            dist/yitcoin-windows-x64-test-candidate.zip
+            dist/yitcoin-windows-x64-test-candidate.SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Launch packaged GUI and verify wallet RPC
         run: |
           py -3 contrib/yitcoin/windows_gui_smoke.py --bindir dist/yitcoin-windows-x64
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Create ZIP and SHA256 checksum
+      - name: Create verified ZIP and SHA256 checksum
         run: |
-          Compress-Archive -Path dist/yitcoin-windows-x64 -DestinationPath dist/yitcoin-windows-x64.zip
+          Compress-Archive -Path dist/yitcoin-windows-x64 -DestinationPath dist/yitcoin-windows-x64.zip -Force
           $hash = (Get-FileHash dist/yitcoin-windows-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  yitcoin-windows-x64.zip" | Set-Content dist/SHA256SUMS.txt -Encoding ascii
 
       - name: Save tested build as Actions artifact
         uses: actions/upload-artifact@v7
         with:
-          name: yitcoin-windows-x64
+          name: yitcoin-windows-x64-${{ github.run_id }}
           path: |
             dist/yitcoin-windows-x64.zip
             dist/SHA256SUMS.txt
@@ -179,13 +277,12 @@ jobs:
             --notes-file dist/yitcoin-windows-x64/README.txt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Save failure diagnostics
+      - name: Save packaging failure diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: windows-build-diagnostics
+          name: windows-package-diagnostics-${{ github.run_id }}
           path: |
+            dist/yitcoin-windows-x64
             build/vcpkg-manifest-install.log
-            build/Testing/Temporary/LastTest.log
-            build/CMakeFiles/CMakeConfigureLog.yaml
           if-no-files-found: ignore
