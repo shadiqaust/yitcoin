@@ -26,6 +26,14 @@
             "widgets"
           ]
         },
+        {
+          "name": "qtbase",
+          "host": true,
+          "default-features": false,
+          "features": [
+            "windeployqt"
+          ]
+        },
         "qttools",
         "libqrencode"
       ]
