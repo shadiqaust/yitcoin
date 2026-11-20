@@ -151,6 +151,9 @@ def main():
                 wait_for(lambda: call(index, "getblockchaininfo")["chain"] == "yitcoin", "Yitcoin RPC")
                 info = call(index, "getblockchaininfo")
                 assert info["blocks"] == 0, info
+                deployments = call(index, "getdeploymentinfo")["deployments"]
+                assert deployments["segwit"]["height"] == 250, deployments
+                assert deployments["segwit"]["active"] is False, deployments
                 genesis_hash = call(index, "getblockhash", "0")
                 header = bytes.fromhex(call(index, "getblockheader", genesis_hash, "false"))
                 digest = hashlib.sha256(hashlib.sha256(header).digest()).digest()

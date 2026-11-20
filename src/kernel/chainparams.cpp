@@ -9,6 +9,7 @@
 #include <consensus/amount.h>
 #include <consensus/merkle.h>
 #include <consensus/params.h>
+#include <consensus/yitcoin.h>
 #include <crypto/hex_base.h>
 #include <kernel/messagestartchars.h>
 #include <kernel/signet.h>
@@ -258,7 +259,9 @@ public:
         consensus.BIP65Height = 388381;
         consensus.BIP66Height = 363725;
         consensus.CSVHeight = 419328;
-        consensus.SegwitHeight = 481824;
+        // Proposed upgrade for the existing Yitcoin chain, not Bitcoin mainnet.
+        // Coordinate all nodes before this height; do not move it into existing history.
+        consensus.SegwitHeight = YITCOIN_SEGWIT_HEIGHT;
         consensus.MinBIP9WarningHeight = 711648;
         consensus.powLimit = uint256{"00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"};
         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60;

@@ -7,6 +7,9 @@
 
 #include <consensus/amount.h>
 
+/** Proposed coordinated upgrade. Existing Yitcoin blocks below 250 keep their rules. */
+inline constexpr int YITCOIN_SEGWIT_HEIGHT{250};
+
 /** Return 2% of a Yitcoin block subsidy, rounded down to the nearest satoshi. */
 inline CAmount YitcoinOwnerReward(CAmount subsidy) noexcept
 {

@@ -63,6 +63,11 @@ BOOST_AUTO_TEST_CASE(yitcoin_owner_reward_test)
     const auto yitcoin_regtest_params{CreateChainParams(*m_node.args, ChainType::YITCOIN_REGTEST)};
     BOOST_CHECK_EQUAL(yitcoin_params->GetConsensus().yitcoin_owner_reward_height, 200);
     BOOST_CHECK_EQUAL(yitcoin_regtest_params->GetConsensus().yitcoin_owner_reward_height, 1);
+    BOOST_CHECK_EQUAL(yitcoin_params->GetConsensus().SegwitHeight, YITCOIN_SEGWIT_HEIGHT);
+    BOOST_CHECK_EQUAL(YITCOIN_SEGWIT_HEIGHT, 250);
+    BOOST_CHECK_EQUAL(yitcoin_regtest_params->GetConsensus().SegwitHeight, 0);
+    const auto bitcoin_params{CreateChainParams(*m_node.args, ChainType::MAIN)};
+    BOOST_CHECK_EQUAL(bitcoin_params->GetConsensus().SegwitHeight, 481824);
 }
 
 BOOST_AUTO_TEST_CASE(subsidy_limit_test)
