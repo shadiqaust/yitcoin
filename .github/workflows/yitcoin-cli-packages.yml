@@ -1,0 +1,150 @@
+name: Yitcoin node and CLI packages
+
+on:
+  push:
+    branches:
+      - "ci/cross-platform-packages"
+    paths:
+      - ".github/workflows/yitcoin-cli-packages.yml"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or commit to package
+        required: true
+        default: biitcoin/chain-type-step-1
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            runner: ubuntu-24.04
+          - platform: windows-x86_64
+            runner: windows-2025-vs2026
+          - platform: macos-arm64
+            runner: macos-15
+          - platform: macos-x86_64
+            runner: macos-15-intel
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+
+      - name: Record source revision
+        run: git rev-parse HEAD
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake python3 libboost-dev libsqlite3-dev
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: brew install cmake boost
+
+      - name: Import Visual Studio environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: py -3 .github/ci-windows.py standard github_import_vs_env
+
+      - name: Configure Linux and macOS node builds
+        if: runner.os != 'Windows'
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_GUI=OFF \
+            -DBUILD_TESTS=OFF \
+            -DENABLE_WALLET=ON \
+            -DWITH_ZMQ=OFF
+
+      - name: Configure Windows node build
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cmake -B build --preset=windows `
+            -DBUILD_GUI=OFF `
+            -DBUILD_TESTS=OFF `
+            -DENABLE_WALLET=ON `
+            -DWITH_ZMQ=OFF `
+            -DVCPKG_HOST_TRIPLET=x64-windows-release `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-release `
+            -DVCPKG_MANIFEST_NO_DEFAULT_FEATURES=ON `
+            -DVCPKG_MANIFEST_FEATURES=wallet
+
+      - name: Build Linux and macOS binaries
+        if: runner.os != 'Windows'
+        run: cmake --build build --parallel 4
+
+      - name: Build Windows binaries
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: cmake --build build --config Release --parallel 4
+
+      - name: Package and smoke-test Linux and macOS binaries
+        if: runner.os != 'Windows'
+        run: |
+          set -euo pipefail
+          package="yitcoin-${{ matrix.platform }}"
+          mkdir -p "dist/${package}/bin"
+          install -m 0755 build/bin/bitcoind build/bin/bitcoin-cli "dist/${package}/bin/"
+          cp COPYING "dist/${package}/COPYING.txt"
+          git rev-parse HEAD > "dist/${package}/SOURCE_COMMIT.txt"
+          cat > "dist/${package}/README.txt" <<'EOF'
+          Yitcoin node and CLI — experimental test package
+
+          Includes bitcoind and bitcoin-cli with wallet RPC support enabled.
+          The Qt desktop GUI and cpuminer are not included.
+          Start the node with -chain=yitcoin and a writable datadir.
+          Keep RPC bound to localhost; never expose the RPC port publicly.
+          These CI archives are unsigned test packages, not installers; some
+          runtime libraries may need to be installed from your OS package manager.
+          They are not production releases.
+          EOF
+          python3 contrib/yitcoin/smoke_test.py --bindir "dist/${package}/bin"
+          tar -czf "dist/${package}.tar.gz" -C dist "${package}"
+          sha256sum "dist/${package}.tar.gz" > "dist/${package}.tar.gz.sha256"
+
+      - name: Package and smoke-test Windows binaries
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $package = "dist/yitcoin-${{ matrix.platform }}"
+          New-Item -ItemType Directory -Force "$package/bin" | Out-Null
+          Copy-Item build/bin/Release/bitcoind.exe "$package/bin/"
+          Copy-Item build/bin/Release/bitcoin-cli.exe "$package/bin/"
+          Get-ChildItem build/bin/Release -Filter *.dll | Copy-Item -Destination "$package/bin/"
+          Copy-Item COPYING "$package/COPYING.txt"
+          git rev-parse HEAD | Set-Content "$package/SOURCE_COMMIT.txt" -Encoding ascii
+          @'
+          Yitcoin node and CLI — experimental test package
+
+          Includes bitcoind.exe and bitcoin-cli.exe with wallet RPC support enabled.
+          The Qt desktop GUI and cpuminer are not included.
+          Start the node with -chain=yitcoin and a writable datadir.
+          Keep RPC bound to localhost; never expose the RPC port publicly.
+          This CI archive is unsigned and is not a production release.
+          '@ | Set-Content "$package/README.txt" -Encoding utf8
+          py -3 contrib/yitcoin/smoke_test.py --bindir "$package/bin"
+          Compress-Archive -Path $package -DestinationPath "dist/yitcoin-${{ matrix.platform }}.zip"
+          $hash = (Get-FileHash "dist/yitcoin-${{ matrix.platform }}.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  yitcoin-${{ matrix.platform }}.zip" | Set-Content "dist/yitcoin-${{ matrix.platform }}.zip.sha256" -Encoding ascii
+
+      - name: Upload tested package artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: yitcoin-${{ matrix.platform }}-${{ github.run_id }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
