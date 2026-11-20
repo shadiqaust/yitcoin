@@ -9,6 +9,12 @@ on:
       - "contrib/yitcoin/windows_gui_smoke.py"
       - "src/test/argsman_tests.cpp"
   workflow_dispatch:
+    inputs:
+      publish_preview:
+        description: Publish a public experimental ZIP after all checks pass
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -162,6 +168,7 @@ jobs:
           retention-days: 30
 
       - name: Publish experimental pre-release
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_preview
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
