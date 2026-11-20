@@ -98,12 +98,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for receiving payments. Use the &apos;Create new receiving address&apos; button in the receive tab to create new addresses.
+        <source>These are your Yitcoin addresses for receiving payments. Use the &apos;Create new receiving address&apos; button in the receive tab to create new addresses.
 Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <source>These are your Yitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -177,7 +177,7 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remember that encrypting your wallet cannot fully protect your bitcoins from being stolen by malware infecting your computer.</source>
+        <source>Remember that encrypting your wallet cannot fully protect your YTC from being stolen by malware infecting your computer.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -237,7 +237,7 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR BITCOINS&lt;/b&gt;!</source>
+        <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR YTC&lt;/b&gt;!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -298,11 +298,11 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Bitcoin network.</source>
+        <source>%n active connection(s) to Yitcoin network.</source>
         <extracomment>A substring of the tooltip.</extracomment>
         <translation type="unfinished">
-            <numerusform>%n active connection to Bitcoin network.</numerusform>
-            <numerusform>%n active connections to Bitcoin network.</numerusform>
+            <numerusform>%n active connection to Yitcoin network.</numerusform>
+            <numerusform>%n active connections to Yitcoin network.</numerusform>
         </translation>
     </message>
     <message>
@@ -549,11 +549,11 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Load Partially Signed Bitcoin Transaction</source>
+        <source>Load Partially Signed Transaction (PSBT)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Load Partially Signed Bitcoin Transaction from clipboard</source>
+        <source>Load Partially Signed Transaction (PSBT) from clipboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -603,7 +603,7 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open a bitcoin: URI</source>
+        <source>Open a payment URI</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -646,7 +646,7 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation>Quit application</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
+        <source>Request Yitcoin payments (generates QR codes and payment URIs)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -686,8 +686,8 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>Send coins to a Bitcoin address</translation>
+        <source>Send coins to a Yitcoin address</source>
+        <translation>Send coins to a Yitcoin address</translation>
     </message>
     <message>
         <source>Sent transaction</source>
@@ -711,7 +711,7 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation>Show information about Qt</translation>
     </message>
     <message>
-        <source>Show the %1 help message to get a list with possible Bitcoin command-line options</source>
+        <source>Show the %1 help message with available command-line options</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -727,8 +727,8 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>Sign messages with your Bitcoin addresses to prove you own them</translation>
+        <source>Sign messages with your Yitcoin addresses to prove you own them</source>
+        <translation>Sign messages with your Yitcoin addresses to prove you own them</translation>
     </message>
     <message>
         <source>Synchronizing with network…</source>
@@ -760,8 +760,8 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation>Up to date</translation>
     </message>
     <message>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>Verify messages to ensure they were signed with specified Bitcoin addresses</translation>
+        <source>Verify messages to ensure they were signed with specified Yitcoin addresses</source>
+        <translation>Verify messages to ensure they were signed with specified Yitcoin addresses</translation>
     </message>
     <message>
         <source>Wallet Data</source>
@@ -1086,7 +1086,7 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The entered address &quot;%1&quot; is not a valid Bitcoin address.</source>
+        <source>The entered address &quot;%1&quot; is not a valid Yitcoin address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1139,7 +1139,7 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 will download and store a copy of the Bitcoin block chain.</source>
+        <source>%1 will download and store a copy of the Yitcoin blockchain.</source>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
@@ -1184,7 +1184,7 @@ Signing is only possible with addresses of the type &apos;legacy&apos;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bitcoin</source>
+        <source>Yitcoin</source>
         <translation type="unfinished">Bitcoin</translation>
     </message>
     <message>
@@ -1347,7 +1347,7 @@ The migration process will create a backup of the wallet before migrating. This 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Attempting to spend bitcoins that are affected by not-yet-displayed transactions will not be accepted by the network.</source>
+        <source>Attempting to spend YTC that are affected by not-yet-displayed transactions will not be accepted by the network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1383,7 +1383,7 @@ The migration process will create a backup of the wallet before migrating. This 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Recent transactions may not yet be visible, and therefore your wallet&apos;s balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the bitcoin network, as detailed below.</source>
+        <source>Recent transactions may not yet be visible, and therefore your wallet&apos;s balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the Yitcoin network, as detailed below.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1406,7 +1406,7 @@ The migration process will create a backup of the wallet before migrating. This 
 <context>
     <name>OpenURIDialog</name>
     <message>
-        <source>Open bitcoin URI</source>
+        <source>Open payment URI</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1519,7 +1519,7 @@ The migration process will create a backup of the wallet before migrating. This 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports PCP or NAT-PMP and it is enabled. The external port could be random.</source>
+        <source>Automatically open the Yitcoin node port on the router. This only works when your router supports PCP or NAT-PMP and it is enabled. The external port could be random.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1560,11 +1560,11 @@ The migration process will create a backup of the wallet before migrating. This 
         <translation>Confirm options reset</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a SOCKS5 proxy.</source>
+        <source>Connect to the Yitcoin network through a SOCKS5 proxy.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a separate SOCKS5 proxy for Tor onion services.</source>
+        <source>Connect to the Yitcoin network through a separate SOCKS5 proxy for Tor onion services.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1836,8 +1836,8 @@ The migration process will create a backup of the wallet before migrating. This 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</translation>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Yitcoin network after a connection is established, but this process has not completed yet.</source>
+        <translation>The displayed information may be out of date. Your wallet automatically synchronizes with the Yitcoin network after a connection is established, but this process has not completed yet.</translation>
     </message>
     <message>
         <source>Total of transactions that have yet to be confirmed, and do not yet count toward the spendable balance</source>
@@ -2011,7 +2011,7 @@ If you are receiving this error you should request the merchant provide a BIP21 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
+        <source>Cannot start Yitcoin payment URI handler</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2023,7 +2023,7 @@ If you are receiving this error you should request the merchant provide a BIP21 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>URI cannot be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
+        <source>URI cannot be parsed! This can be caused by an invalid Yitcoin address or malformed URI parameters.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2229,7 +2229,7 @@ If you are receiving this error you should request the merchant provide a BIP21 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enter a Bitcoin address (e.g. %1)</source>
+        <source>Enter a Yitcoin address (e.g. %1)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2630,7 +2630,7 @@ If you are receiving this error you should request the merchant provide a BIP21 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Network addresses that your Bitcoin node is currently using to communicate with other nodes.</source>
+        <source>Network addresses that your Yitcoin node is currently using to communicate with other nodes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2912,7 +2912,7 @@ For more information on using this console, type %6.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Bitcoin network.</source>
+        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Yitcoin network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3251,7 +3251,7 @@ For more information on using this console, type %6.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Creates a Partially Signed Bitcoin Transaction (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.</source>
+        <source>Creates a Partially Signed Transaction (PSBT) (PSBT) for use with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3331,7 +3331,7 @@ For more information on using this console, type %6.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please, review your transaction proposal. This will produce a Partially Signed Bitcoin Transaction (PSBT) which you can save or copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.</source>
+        <source>Please, review your transaction proposal. This will produce a Partially Signed Transaction (PSBT) (PSBT) which you can save or copy and then sign with e.g. an offline %1 wallet, or a PSBT-compatible hardware wallet.</source>
         <extracomment>Text to inform a user attempting to create a transaction of their current options. At this stage, a user can only create a PSBT. This string is displayed when private keys are disabled and an external signer is not available.</extracomment>
         <translation type="unfinished"></translation>
     </message>
@@ -3341,7 +3341,7 @@ For more information on using this console, type %6.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please, review your transaction. You can create and send this transaction or create a Partially Signed Bitcoin Transaction (PSBT), which you can save or copy and then sign with, e.g., an offline %1 wallet, or a PSBT-compatible hardware wallet.</source>
+        <source>Please, review your transaction. You can create and send this transaction or create a Partially Signed Transaction (PSBT) (PSBT), which you can save or copy and then sign with, e.g., an offline %1 wallet, or a PSBT-compatible hardware wallet.</source>
         <extracomment>Text to inform a user attempting to create a transaction of their current options. At this stage, a user can send their transaction or create a PSBT. This string is displayed when both private keys and PSBT controls are enabled.</extracomment>
         <translation type="unfinished"></translation>
     </message>
@@ -3444,7 +3444,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of &quot;100 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Warning: Invalid Bitcoin address</source>
+        <source>Warning: Invalid Yitcoin address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3452,7 +3452,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of &quot;100 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When there is less transaction volume than space in the blocks, miners as well as relaying nodes may enforce a minimum fee. Paying only this minimum fee is just fine, but be aware that this can result in a never confirming transaction once there is more demand for bitcoin transactions than the network can process.</source>
+        <source>When there is less transaction volume than space in the blocks, miners as well as relaying nodes may enforce a minimum fee. Paying only this minimum fee is just fine, but be aware that this can result in a never confirming transaction once there is more demand for Yitcoin transactions than the network can process.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3479,7 +3479,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of &quot;100 
         <translation>&amp;Label:</translation>
     </message>
     <message>
-        <source>A message that was attached to the bitcoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Bitcoin network.</source>
+        <source>A message that was attached to the bitcoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Yitcoin network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3523,7 +3523,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of &quot;100 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The Bitcoin address to send the payment to</source>
+        <source>The Yitcoin address to send the payment to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3531,7 +3531,7 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of &quot;100 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The fee will be deducted from the amount being sent. The recipient will receive less bitcoins than you enter in the amount field. If multiple recipients are selected, the fee is split equally.</source>
+        <source>The fee will be deducted from the amount being sent. The recipient will receive less YTC than you enter in the amount field. If multiple recipients are selected, the fee is split equally.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3652,8 +3652,8 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of &quot;100 
         <translation>Sign &amp;Message</translation>
     </message>
     <message>
-        <source>Sign the message to prove you own this Bitcoin address</source>
-        <translation>Sign the message to prove you own this Bitcoin address</translation>
+        <source>Sign the message to prove you own this Yitcoin address</source>
+        <translation>Sign the message to prove you own this Yitcoin address</translation>
     </message>
     <message>
         <source>Signature</source>
@@ -3664,11 +3664,11 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of &quot;100 
         <translation>Signatures - Sign / Verify a Message</translation>
     </message>
     <message>
-        <source>The Bitcoin address the message was signed with</source>
+        <source>The Yitcoin address the message was signed with</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The Bitcoin address to sign the message with</source>
+        <source>The Yitcoin address to sign the message with</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3700,15 +3700,15 @@ Note:  Since the fee is calculated on a per-byte basis, a fee rate of &quot;100 
         <translation>Verify &amp;Message</translation>
     </message>
     <message>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>Verify the message to ensure it was signed with the specified Bitcoin address</translation>
+        <source>Verify the message to ensure it was signed with the specified Yitcoin address</source>
+        <translation>Verify the message to ensure it was signed with the specified Yitcoin address</translation>
     </message>
     <message>
         <source>Wallet unlock was cancelled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>You can sign messages/agreements with your legacy (P2PKH) addresses to prove you can receive bitcoins sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
+        <source>You can sign messages/agreements with your legacy (P2PKH) addresses to prove you can receive YTC sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
