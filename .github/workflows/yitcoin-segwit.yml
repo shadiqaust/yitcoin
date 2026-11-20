@@ -1,0 +1,45 @@
+name: Yitcoin SegWit activation regression
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "test/functional/test_framework/**"
+      - "contrib/yitcoin/**"
+      - ".github/workflows/yitcoin-segwit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  activation:
+    name: Wallet transfer across activation and restart
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            build-essential cmake python3 libboost-dev libsqlite3-dev
+      - name: Build wallet-enabled node and CLI
+        run: |
+          cmake -S . -B build -DBUILD_GUI=OFF -DENABLE_IPC=OFF \
+            -DENABLE_WALLET=ON -DBUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --target bitcoind bitcoin-cli -j2
+      - name: Verify main-network activation parameters and old smoke gates
+        run: python3 contrib/yitcoin/smoke_test.py --bindir build/bin
+      - name: Exercise witness payment before and after activation
+        run: |
+          python3 contrib/yitcoin/segwit_activation_test.py --bindir build/bin \
+            --logdir "$RUNNER_TEMP/yitcoin-segwit-logs"
+      - name: Upload isolated test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: yitcoin-segwit-regression-${{ github.run_id }}
+          path: ${{ runner.temp }}/yitcoin-segwit-logs
+          if-no-files-found: ignore
+          retention-days: 7

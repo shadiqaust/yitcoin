@@ -63,6 +63,7 @@ private:
     // Chain context for the block
     int nHeight;
     int64_t m_lock_time_cutoff;
+    bool m_include_witness{false};
 
     const CChainParams& chainparams;
     const CTxMemPool* const m_mempool;
@@ -100,9 +101,8 @@ private:
     // helper functions for addChunks()
     /** Test if a new chunk would "fit" in the block */
     bool TestChunkBlockLimits(int64_t chunk_weight, int64_t chunk_sigops_cost) const;
-    /** Perform locktime checks on each transaction in a chunk:
-      * This check should always succeed, and is here
-      * only as an extra check in case of a bug */
+    /** Check locktime and exclude witness transactions before SegWit activation.
+      * A skipped chunk and its descendants remain out of this template. */
     bool TestChunkTransactions(const std::vector<CTxMemPoolEntryRef>& txs) const;
 };
 

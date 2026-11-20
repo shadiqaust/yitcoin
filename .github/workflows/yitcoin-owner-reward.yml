@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: shadiqaust/cpuminer-opt
-          ref: 6b35302afac26659d77e13af14fa1e15f86a4f41
+          ref: e0ac67351e48401cd1632f22352e206eb90cab33
           path: miner
       - name: Install build dependencies
         run: |
