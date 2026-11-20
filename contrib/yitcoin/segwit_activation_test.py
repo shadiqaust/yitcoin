@@ -1,4 +1,6 @@
-#!/usr/bin/env python3
+# Copyright (c) 2026-present The Yitcoin developers
+# Distributed under the MIT software license, see the accompanying
+# file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test a real wallet transfer across Yitcoin's proposed SegWit activation.
 
 Only disposable, loopback-only yitcoin-regtest datadirs are used. The third
@@ -20,7 +22,7 @@ from smoke_test import OWNER_SCRIPT, free_port
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "test" / "functional"))
 from test_framework.blocktools import add_witness_commitment, create_block, create_coinbase
-from test_framework.messages import COIN, CTxOut
+from test_framework.messages import COIN, CTxOut, tx_from_hex
 from test_framework.script import CScript
 
 
@@ -118,6 +120,21 @@ def sync_tip(source, *targets):
         target.wait_for(lambda: target.call("getbestblockhash") == expected, "matching tips")
 
 
+def payment_block(template, tx_hex, fee, owner_amount):
+    coinbase = create_coinbase(template["height"], fees=int(fee * COIN))
+    coinbase.vout[0].nValue -= owner_amount
+    coinbase.vout.append(CTxOut(owner_amount, CScript(bytes.fromhex(OWNER_SCRIPT))))
+    block = create_block(tmpl=template, coinbase=coinbase, txlist=[tx_hex])
+    add_witness_commitment(block)
+    return block
+
+
+def propose(node, block):
+    return node.call("getblocktemplate", {
+        "mode": "proposal", "data": block.serialize().hex(), **GBT_REQUEST,
+    })
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bindir", type=Path, required=True)
@@ -156,16 +173,9 @@ def main():
             # A witness-bearing block is still invalid before activation; do not
             # 'fix' this by bypassing validation or retroactively changing history.
             fee = sender.call("getmempoolentry", txid)["fees"]["base"]
-            coinbase = create_coinbase(227, fees=int(fee * COIN))
             owner_amount = 25 * COIN // 50  # regression-chain halving is at 150
-            coinbase.vout[0].nValue -= owner_amount
-            coinbase.vout.append(CTxOut(owner_amount, CScript(bytes.fromhex(OWNER_SCRIPT))))
-            block = create_block(tmpl=template, coinbase=coinbase, txlist=[tx["hex"]])
-            add_witness_commitment(block)
-            block.hashMerkleRoot = block.calc_merkle_root()
-            rejection = sender.call("getblocktemplate", {
-                "mode": "proposal", "data": block.serialize().hex(), **GBT_REQUEST,
-            })
+            block = payment_block(template, tx["hex"], fee, owner_amount)
+            rejection = propose(sender, block)
             assert rejection == "unexpected-witness", rejection
             print("PASS: witness payment retained, block 227 template valid, premature witness rejected")
 
@@ -191,6 +201,19 @@ def main():
             assert "!segwit" in template["rules"]
             assert txid in [entry["txid"] for entry in template["transactions"]]
             assert "default_witness_commitment" in template
+
+            candidate = payment_block(template, tx["hex"], fee, owner_amount)
+            assert propose(sender, candidate) is None
+            # Owner underpayment must still be rejected with a valid witness
+            # commitment; the fix must not weaken the 2% rule.
+            candidate = payment_block(template, tx["hex"], fee, owner_amount - 1)
+            assert propose(sender, candidate) == "bad-cb-owner-reward"
+            candidate = payment_block(template, tx["hex"], fee, owner_amount)
+            # A tampered witness cannot be accepted after activation either.
+            damaged = tx_from_hex(tx["hex"])
+            damaged.wit.vtxinwit[0].scriptWitness.stack[0] = b"\x00"
+            candidate.vtx[1] = damaged
+            assert propose(sender, candidate) == "bad-witness-merkle-match"
 
             block_hash = sender.call("generatetoaddress", 1, address)[0]
             sync_tip(sender, receiver)
