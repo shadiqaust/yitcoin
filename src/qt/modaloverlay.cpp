@@ -2,7 +2,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-
 #include <qt/modaloverlay.h>
 #include <qt/forms/ui_modaloverlay.h>
 
@@ -157,18 +156,18 @@ void ModalOverlay::tipUpdate(int count, const QDateTime& blockDate, double nVeri
         ui->numberOfBlocksLeft->setText(QString::number(bestHeaderHeight - count));
     } else {
         UpdateHeaderSyncLabel();
-        ui->expectedTimeLeft->setText(tr("Unknownâ¦"));
+        ui->expectedTimeLeft->setText(tr("Unknown…"));
     }
 }
 
 void ModalOverlay::UpdateHeaderSyncLabel() {
     int est_headers_left = bestHeaderDate.secsTo(QDateTime::currentDateTime()) / Params().GetConsensus().nPowTargetSpacing;
-    ui->numberOfBlocksLeft->setText(tr("Unknown. Syncing Headers (%1, %2%)â¦").arg(bestHeaderHeight).arg(QString::number(100.0 / (bestHeaderHeight + est_headers_left) * bestHeaderHeight, 'f', 1)));
+    ui->numberOfBlocksLeft->setText(tr("Unknown. Syncing Headers (%1, %2%)…").arg(bestHeaderHeight).arg(QString::number(100.0 / (bestHeaderHeight + est_headers_left) * bestHeaderHeight, 'f', 1)));
 }
 
 void ModalOverlay::UpdateHeaderPresyncLabel(int height, const QDateTime& blockDate) {
     int est_headers_left = blockDate.secsTo(QDateTime::currentDateTime()) / Params().GetConsensus().nPowTargetSpacing;
-    ui->numberOfBlocksLeft->setText(tr("Unknown. Pre-syncing Headers (%1, %2%)â¦").arg(height).arg(QString::number(100.0 / (height + est_headers_left) * height, 'f', 1)));
+    ui->numberOfBlocksLeft->setText(tr("Unknown. Pre-syncing Headers (%1, %2%)…").arg(height).arg(QString::number(100.0 / (height + est_headers_left) * height, 'f', 1)));
 }
 
 void ModalOverlay::toggleVisibility()

@@ -2,7 +2,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-
 #include <qt/sendcoinsdialog.h>
 #include <qt/forms/ui_sendcoinsdialog.h>
 
@@ -372,7 +371,7 @@ bool SendCoinsDialog::PrepareSendText(QString& question_string, QString& informa
 
     if (formatted.size() > 1) {
         question_string = question_string.arg("");
-        informative_text = tr("To review recipient list click \"Show Detailsâ¦\"");
+        informative_text = tr("To review recipient list click \"Show Details…\"");
         detailed_text = formatted.join("\n\n");
     } else {
         question_string = question_string.arg("<br /><br />" + formatted.at(0));

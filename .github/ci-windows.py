@@ -83,10 +83,10 @@ def generate(ci_type):
         "-DVCPKG_TARGET_TRIPLET=x64-windows-release",
     ] + GENERATE_OPTIONS[ci_type]
     if run(command, check=False).returncode != 0:
-        print("=== â ï¸ ===")
+        print("=== ⚠️ ===")
         print("Generate failure! Network issue? Retry once ...")
         time.sleep(12)
-        print("=== â ï¸ ===")
+        print("=== ⚠️ ===")
         run(command)
 
 
