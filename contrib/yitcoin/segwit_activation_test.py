@@ -75,6 +75,9 @@ class Node:
         result = subprocess.run(command, capture_output=True, text=True, timeout=20)
         if result.returncode:
             raise RuntimeError(result.stderr.strip())
+        # bitcoin-cli prints no text for a successful JSON null RPC result.
+        if not result.stdout.strip():
+            return None
         try:
             return json.loads(result.stdout, parse_float=Decimal)
         except json.JSONDecodeError:
