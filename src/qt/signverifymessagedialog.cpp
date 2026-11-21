@@ -12,7 +12,6 @@
 #include <qt/walletmodel.h>
 
 #include <common/signmessage.h>
-#include <bitcoin-build-config.h>
 #include <key_io.h>
 #include <wallet/wallet.h>
 

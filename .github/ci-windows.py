@@ -73,6 +73,7 @@ def generate(ci_type):
         "-B",
         "build",
         "-Werror=dev" if ci_type == "standard" else "-Wno-error=dev",
+        "-Wno-error=non-target-directive",
         "--preset=windows",
         # Using x64-windows-release for both host and target triplets
         # to ensure vcpkg builds only release packages, thereby optimizing
@@ -82,10 +83,10 @@ def generate(ci_type):
         "-DVCPKG_TARGET_TRIPLET=x64-windows-release",
     ] + GENERATE_OPTIONS[ci_type]
     if run(command, check=False).returncode != 0:
-        print("=== ⚠️ ===")
+        print("=== â ï¸ ===")
         print("Generate failure! Network issue? Retry once ...")
         time.sleep(12)
-        print("=== ⚠️ ===")
+        print("=== â ï¸ ===")
         run(command)
 
 
