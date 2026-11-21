@@ -8,6 +8,8 @@
 #include <chrono>
 #include <cstdint>
 
+#define YITCOIN_GUI_NAME "Yitcoin Core"
+
 using namespace std::chrono_literals;
 
 /* A delay between model updates */

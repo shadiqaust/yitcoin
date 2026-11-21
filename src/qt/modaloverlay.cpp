@@ -2,12 +2,11 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <bitcoin-build-config.h>
-
 #include <qt/modaloverlay.h>
 #include <qt/forms/ui_modaloverlay.h>
 
 #include <chainparams.h>
+#include <qt/guiconstants.h>
 #include <qt/guiutil.h>
 
 #include <QEasingCurve>
@@ -31,7 +30,7 @@ ModalOverlay::ModalOverlay(bool enable_wallet, QWidget* parent)
     setVisible(false);
     if (!enable_wallet) {
         ui->infoText->setVisible(false);
-        ui->infoTextStrong->setText(tr("%1 is currently syncing.  It will download headers and blocks from peers and validate them until reaching the tip of the block chain.").arg(CLIENT_NAME));
+        ui->infoTextStrong->setText(tr("%1 is currently syncing.  It will download headers and blocks from peers and validate them until reaching the tip of the block chain.").arg(YITCOIN_GUI_NAME));
     }
 
     m_animation.setTargetObject(this);

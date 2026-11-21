@@ -73,6 +73,7 @@ def generate(ci_type):
         "-B",
         "build",
         "-Werror=dev" if ci_type == "standard" else "-Wno-error=dev",
+        "-Wno-error=non-target-directive",
         "--preset=windows",
         # Using x64-windows-release for both host and target triplets
         # to ensure vcpkg builds only release packages, thereby optimizing
