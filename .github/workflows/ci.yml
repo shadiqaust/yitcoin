@@ -9,7 +9,10 @@ on:
   # See: https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#push.
   push:
     branches:
-      - '**'
+      # Feature branches are validated by their pull_request run. Keep push CI
+      # for the upstream default branch and the maintained Yitcoin integration branch.
+      - master
+      - biitcoin/chain-type-step-1
     tags-ignore:
       - '**'
 
@@ -32,7 +35,9 @@ jobs:
     runs-on: ${{ github.repository == 'bitcoin/bitcoin' && 'warp-ubuntu-2604-x64-8x' || 'ubuntu-26.04' }}
     env:
       TEST_RUNNER_PORT_MIN: "14000"  # Use a larger port range to avoid colliding with other CI services.
-    if: github.event_name == 'pull_request' && github.event.pull_request.commits != 1
+    # Upstream checks every ancestor commit in a multi-commit PR. This fork
+    # validates the final PR tree in the matrix below instead.
+    if: github.repository == 'bitcoin/bitcoin' && github.event_name == 'pull_request' && github.event.pull_request.commits != 1
     timeout-minutes: 360  # Use maximum time, see https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idtimeout-minutes.
     steps:
       - name: Determine fetch depth
