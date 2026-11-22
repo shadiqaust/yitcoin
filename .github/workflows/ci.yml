@@ -51,6 +51,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: ${{ env.FETCH_DEPTH }}
+      - name: Preserve current CI test helper
+        run: cp .github/ci-test-each-commit-exec.py "${RUNNER_TEMP}/ci-test-each-commit-exec.py"
       - name: Determine commit range
         run: |
           # Checkout HEAD~ and find the test base commit.
@@ -101,7 +103,7 @@ jobs:
       - name: Compile and run tests
         run: |
           # Run tests on commits after the last merge commit and before the PR head commit
-          git rebase --exec "git merge --no-commit origin/${GITHUB_BASE_REF} && python3 ./.github/ci-test-each-commit-exec.py && git reset --hard" ${{ env.TEST_BASE }}
+          git rebase --exec "git merge --no-commit origin/${GITHUB_BASE_REF} && python3 \"${RUNNER_TEMP}/ci-test-each-commit-exec.py\" && git reset --hard" ${{ env.TEST_BASE }}
 
   macos-native-arm64:
     name: ${{ matrix.job-name }}
@@ -509,7 +511,7 @@ jobs:
           - name: 'MSan, fuzz'
             warp-runner: 'warp-ubuntu-latest-x64-8x'
             fallback-runner: 'ubuntu-latest'
-            timeout-minutes: 180
+            timeout-minutes: 360  # Cold MSan corpus runs can exceed three hours on GitHub-hosted runners.
             file-env: './ci/test/00_setup_env_native_fuzz_with_msan.sh'
 
           - name: 'MSan'

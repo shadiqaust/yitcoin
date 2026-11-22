@@ -29,6 +29,7 @@ def main():
         "-B",
         build_dir,
         "-Werror=dev",
+        "-Wno-error=non-target-directive",
         # Use clang++, because it is a bit faster and uses less memory than g++
         "-DCMAKE_C_COMPILER=clang",
         "-DCMAKE_CXX_COMPILER=clang++",

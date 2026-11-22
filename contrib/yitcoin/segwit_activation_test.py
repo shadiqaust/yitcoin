@@ -75,6 +75,9 @@ class Node:
         result = subprocess.run(command, capture_output=True, text=True, timeout=20)
         if result.returncode:
             raise RuntimeError(result.stderr.strip())
+        # bitcoin-cli prints no text for a successful JSON null RPC result.
+        if not result.stdout.strip():
+            return None
         try:
             return json.loads(result.stdout, parse_float=Decimal)
         except json.JSONDecodeError:
@@ -203,7 +206,8 @@ def main():
             assert "default_witness_commitment" in template
 
             candidate = payment_block(template, tx["hex"], fee, owner_amount)
-            assert propose(sender, candidate) is None
+            rejection = propose(sender, candidate)
+            assert rejection is None, f"valid activation block was rejected: {rejection}"
             # Owner underpayment must still be rejected with a valid witness
             # commitment; the fix must not weaken the 2% rule.
             candidate = payment_block(template, tx["hex"], fee, owner_amount - 1)

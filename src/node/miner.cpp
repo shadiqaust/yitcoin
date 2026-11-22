@@ -15,7 +15,6 @@
 #include <consensus/tx_verify.h>
 #include <consensus/validation.h>
 #include <consensus/yitcoin.h>
-#include <deploymentstatus.h>
 #include <node/blockstorage.h>
 #include <node/mining_args.h>
 #include <node/mining_types.h>
