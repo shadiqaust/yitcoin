@@ -1,19 +1,28 @@
 name: Yitcoin Linux and macOS wallet GUI test packages
 
 on:
-  push:
-    branches:
-      - "feature/unix-wallet-gui-packages"
-    paths:
-      - ".github/workflows/yitcoin-unix-gui.yml"
-      - "contrib/yitcoin/unix_gui_smoke.py"
   workflow_dispatch:
     inputs:
       ref:
-        description: Branch or commit to build
+        description: Branch or commit with the GUI packaging source
         required: true
-        default: biitcoin/chain-type-step-1
+        default: feature/unix-wallet-gui-packages
         type: string
+      reuse_run_id:
+        description: Optional prior GUI build run ID to finish packaging without recompiling
+        required: false
+        default: ""
+        type: string
+      platform:
+        description: Build all platforms or select one package
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - linux-x86_64
+          - macos-arm64
+          - macos-x86_64
 
 permissions:
   contents: read
@@ -24,6 +33,7 @@ concurrency:
 
 jobs:
   gui:
+    if: inputs.reuse_run_id == '' && (inputs.platform == 'all' || inputs.platform == matrix.platform)
     name: Wallet GUI ${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 240
@@ -182,7 +192,8 @@ jobs:
             "$app/Contents/MacOS/YitcoinWallet" -version
             python3 contrib/yitcoin/unix_gui_smoke.py \
               --gui "$app/Contents/MacOS/yitcoin-qt-real" \
-              --cli "$app/Contents/MacOS/bitcoin-cli"
+              --cli "$app/Contents/MacOS/bitcoin-cli" \
+              --qt-platform cocoa
             cat > "$stage/README.txt" <<'README'
           Yitcoin Wallet — macOS test package
           Open YitcoinWallet.app. It starts with Yitcoin chain parameters and stores wallet data
@@ -219,3 +230,96 @@ jobs:
             dist
           if-no-files-found: ignore
           retention-days: 7
+
+
+  repackage:
+    name: Re-test and package ${{ matrix.platform }} without rebuilding
+    if: inputs.reuse_run_id != '' && (inputs.platform == 'all' || inputs.platform == matrix.platform)
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            runner: ubuntu-24.04
+          - platform: macos-arm64
+            runner: macos-15
+          - platform: macos-x86_64
+            runner: macos-15-intel
+    steps:
+      - name: Check out packaging and smoke-test scripts
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Validate previous run ID
+        shell: bash
+        env:
+          RUN_ID: ${{ inputs.reuse_run_id }}
+        run: |
+          [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "reuse_run_id must be numeric" >&2; exit 1; }
+
+      - name: Download previously built GUI binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: yitcoin-${{ matrix.platform }}-gui-diagnostics-${{ inputs.reuse_run_id }}
+          path: reused
+          run-id: ${{ inputs.reuse_run_id }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+
+      - name: Smoke-test and package the existing build
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          RUN_ID: ${{ inputs.reuse_run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          stage="reused/dist/yitcoin-$PLATFORM-wallet-gui"
+          test -d "$stage"
+          source_sha="$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" | python3 -c 'import json,sys; print(json.load(sys.stdin)["head_sha"])')"
+          printf 'Source commit: %s\nBuild workflow run: %s\n' "$source_sha" "$RUN_ID" > "$stage/SOURCE.txt"
+          cp COPYING "$stage/COPYING.txt"
+          mkdir -p dist
+          if [[ "$PLATFORM" == linux-x86_64 ]]; then
+            python3 contrib/yitcoin/unix_gui_smoke.py --gui "$stage/bin/bitcoin-qt" --cli "$stage/bin/bitcoin-cli" --qt-platform offscreen
+            cat > "$stage/README.txt" <<'README'
+          Yitcoin Wallet — Linux x86_64 test package
+          Unsigned experimental test package; not a public release. Run ./Start-Yitcoin.sh.
+          Built for Ubuntu 24.04; Qt 6 and other runtime libraries must be available.
+          This creates or uses a local Yitcoin wallet and does not import another computer's wallet.
+          Keep RPC local. Never share seed phrases, private keys, or wallet backups.
+          README
+            archive="dist/yitcoin-$PLATFORM-wallet-gui.tar.gz"
+            tar -czf "$archive" -C reused/dist "$(basename "$stage")"
+            sha256sum "$archive" > "$archive.sha256"
+          else
+            app="$stage/YitcoinWallet.app"
+            test -x "$app/Contents/MacOS/YitcoinWallet"
+            test -d "$app/Contents/PlugIns/platforms/cocoa"
+            python3 contrib/yitcoin/unix_gui_smoke.py --gui "$app/Contents/MacOS/yitcoin-qt-real" --cli "$app/Contents/MacOS/bitcoin-cli" --qt-platform cocoa
+            cat > "$stage/README.txt" <<'README'
+          Yitcoin Wallet — macOS test package
+          Unsigned and not notarized; macOS may show an unidentified-developer warning.
+          Do not disable Gatekeeper globally. Open only software you trust and have verified.
+          The app stores wallet data under Library/Application Support/Yitcoin.
+          It does not import another computer's wallet. Keep seeds and private keys private.
+          README
+            dmg="dist/yitcoin-$PLATFORM-wallet-gui.dmg"
+            hdiutil create -volname "Yitcoin Wallet" -srcfolder "$stage" -ov -format UDZO "$dmg"
+            shasum -a 256 "$dmg" > "$dmg.sha256"
+          fi
+
+      - name: Upload unsigned test package
+        uses: actions/upload-artifact@v7
+        with:
+          name: yitcoin-${{ matrix.platform }}-wallet-gui-${{ github.run_id }}
+          path: dist/yitcoin-${{ matrix.platform }}-wallet-gui*
+          if-no-files-found: error
+          retention-days: 14

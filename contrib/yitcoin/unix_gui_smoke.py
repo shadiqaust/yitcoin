@@ -21,6 +21,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--gui", required=True, help="Path to the packaged Qt GUI executable")
     parser.add_argument("--cli", required=True, help="Path to the matching bitcoin-cli executable")
+    parser.add_argument("--qt-platform", choices=("offscreen", "cocoa"), default="offscreen",
+                        help="Qt platform plugin for Linux or macOS")
     args = parser.parse_args()
     gui = str(Path(args.gui).resolve())
     cli = str(Path(args.cli).resolve())
@@ -28,13 +30,13 @@ def main() -> None:
         raise SystemExit("GUI or CLI binary does not exist")
 
     env = os.environ.copy()
-    env["QT_QPA_PLATFORM"] = "offscreen"
+    env["QT_QPA_PLATFORM"] = args.qt_platform
     with tempfile.TemporaryDirectory(prefix="yitcoin-gui-smoke-") as temporary:
         datadir = Path(temporary)
         log_path = datadir / "gui.log"
         with log_path.open("w", encoding="utf-8") as log:
             process = subprocess.Popen(
-                [gui, "-platform", "offscreen", "-chain=yitcoin", f"-datadir={datadir}",
+                [gui, "-chain=yitcoin", f"-datadir={datadir}",
                  "-server=1", "-listen=0", "-connect=0", "-dnsseed=0", "-fixedseeds=0"],
                 stdout=log, stderr=subprocess.STDOUT, env=env,
             )
