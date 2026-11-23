@@ -162,7 +162,16 @@ jobs:
           <key>NSHighResolutionCapable</key><true/>
           </dict></plist>
           PLIST
-            "$QT_PREFIX/bin/macdeployqt" "$app" -always-overwrite -verbose=1 \
+            # Bundle only the native platform plugin, not unrelated Homebrew Qt plugins.
+            mkdir -p "$app/Contents/PlugIns/platforms"
+            cp "$QT_PREFIX/plugins/platforms/libqcocoa.dylib" "$app/Contents/PlugIns/platforms/"
+            libpaths=()
+            for libdir in "$(brew --prefix)"/opt/*/lib; do
+              [[ ! -d "$libdir" ]] || libpaths+=("-libpath=$libdir")
+            done
+            "$QT_PREFIX/bin/macdeployqt" "$app" -always-overwrite -no-plugins -verbose=1 \
+              "${libpaths[@]}" \
+              -executable="$app/Contents/PlugIns/platforms/libqcocoa.dylib" \
               -executable="$app/Contents/MacOS/bitcoind" \
               -executable="$app/Contents/MacOS/bitcoin-cli"
             test -d "$app/Contents/Frameworks"
@@ -179,6 +188,8 @@ jobs:
           LAUNCHER
             chmod 0755 "$app/Contents/MacOS/YitcoinWallet"
             /usr/libexec/PlistBuddy -c 'Set :CFBundleExecutable YitcoinWallet' "$app/Contents/Info.plist"
+            codesign --force --deep --sign - "$app"
+            codesign --verify --deep --strict "$app"
             "$app/Contents/MacOS/YitcoinWallet" -version
             python3 contrib/yitcoin/unix_gui_smoke.py \
               --gui "$app/Contents/MacOS/yitcoin-qt-real" \
