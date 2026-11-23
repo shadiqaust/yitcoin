@@ -1,0 +1,221 @@
+name: Yitcoin Linux and macOS wallet GUI test packages
+
+on:
+  push:
+    branches:
+      - "feature/unix-wallet-gui-packages"
+    paths:
+      - ".github/workflows/yitcoin-unix-gui.yml"
+      - "contrib/yitcoin/unix_gui_smoke.py"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch or commit to build
+        required: true
+        default: biitcoin/chain-type-step-1
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: yitcoin-unix-gui-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  gui:
+    name: Wallet GUI ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x86_64
+            runner: ubuntu-24.04
+            os: linux
+          - platform: macos-arm64
+            runner: macos-15
+            os: macos
+          - platform: macos-x86_64
+            runner: macos-15-intel
+            os: macos
+    steps:
+      - name: Check out Yitcoin source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+
+      - name: Record source and platform
+        run: |
+          git rev-parse HEAD
+          uname -a
+          cmake --version || true
+
+      - name: Install Linux build and GUI dependencies
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config python3 \
+            libboost-dev libevent-dev libsqlite3-dev libqrencode-dev \
+            qt6-base-dev qt6-qpa-plugins qt6-tools-dev qt6-tools-dev-tools
+
+      - name: Install macOS build and GUI dependencies
+        if: matrix.os == 'macos'
+        run: |
+          brew install cmake boost qt@6 libevent sqlite qrencode
+          echo "QT_PREFIX=$(brew --prefix qt@6)" >> "$GITHUB_ENV"
+
+      - name: Configure wallet-enabled Qt GUI
+        shell: bash
+        run: |
+          args=(
+            -S . -B build
+            -DCMAKE_BUILD_TYPE=Release
+            -DBUILD_GUI=ON
+            -DBUILD_TESTS=OFF
+            -DBUILD_BENCH=OFF
+            -DENABLE_WALLET=ON
+            -DENABLE_IPC=OFF
+            -DWITH_QRENCODE=ON
+            -DWITH_ZMQ=OFF
+          )
+          if [[ "${{matrix.os}}" == macos ]]; then
+            args+=("-DCMAKE_PREFIX_PATH=${QT_PREFIX}")
+          fi
+          cmake "${args[@]}"
+
+      - name: Build wallet GUI and node tools
+        shell: bash
+        run: cmake --build build --parallel 4
+
+      - name: Package and launch-test GUI
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          BUILD_OS: ${{ matrix.os }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          if [[ "$BUILD_OS" == linux ]]; then
+            stage="dist/yitcoin-${PLATFORM}-wallet-gui"
+            mkdir -p "$stage/bin" "$stage/share/icons"
+            install -m 0755 build/bin/bitcoin-qt "$stage/bin/bitcoin-qt"
+            install -m 0755 build/bin/bitcoind "$stage/bin/bitcoind"
+            install -m 0755 build/bin/bitcoin-cli "$stage/bin/bitcoin-cli"
+            install -m 0644 src/qt/res/icons/bitcoin.png "$stage/share/icons/yitcoin.png"
+            for binary in "$stage/bin/bitcoin-qt" "$stage/bin/bitcoind" "$stage/bin/bitcoin-cli"; do
+              ldd "$binary" | tee -a "$stage/RUNTIME-LIBRARIES.txt"
+              if ldd "$binary" | grep -q 'not found'; then
+                echo "Missing runtime library for $binary" >&2
+                exit 1
+              fi
+            done
+            cat > "$stage/Start-Yitcoin.sh" <<'LAUNCHER'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+          DATA="${XDG_DATA_HOME:-$HOME/.local/share}/yitcoin"
+          mkdir -p "$DATA"
+          exec "$HERE/bin/bitcoin-qt" -chain=yitcoin -datadir="$DATA" \
+            -addnode=185.182.8.84:19433 -listen=0 -server=1 "$@"
+          LAUNCHER
+            chmod 0755 "$stage/Start-Yitcoin.sh"
+            cat > "$stage/README.txt" <<'README'
+          Yitcoin Wallet — Linux x86_64 test package
+          Built on Ubuntu 24.04. Unsigned experimental test package; not a public release.
+          Run ./Start-Yitcoin.sh from the extracted folder. It uses Yitcoin chain parameters
+          and stores data in the standard per-user Yitcoin data directory.
+          Qt 6 and other runtime libraries must be available; see RUNTIME-LIBRARIES.txt.
+          This creates/uses a local Yitcoin wallet and does not import another computer's wallet.
+          Keep RPC local. Never share seed phrases, private keys, or wallet backups.
+          The wallet GUI is not a CPU miner. No security audit or coin-value guarantee is implied.
+          README
+            printf 'Source commit: %s\n' "$(git rev-parse HEAD)" >> "$stage/README.txt"
+            cp COPYING "$stage/COPYING.txt"
+            python3 contrib/yitcoin/unix_gui_smoke.py --gui "$stage/bin/bitcoin-qt" --cli "$stage/bin/bitcoin-cli"
+            archive="dist/yitcoin-${PLATFORM}-wallet-gui.tar.gz"
+            tar -czf "$archive" -C dist "$(basename "$stage")"
+            sha256sum "$archive" > "$archive.sha256"
+          else
+            stage="dist/yitcoin-${PLATFORM}-wallet-gui"
+            app="$stage/YitcoinWallet.app"
+            mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+            install -m 0755 build/bin/bitcoin-qt "$app/Contents/MacOS/bitcoin-qt"
+            install -m 0755 build/bin/bitcoind "$app/Contents/MacOS/bitcoind"
+            install -m 0755 build/bin/bitcoin-cli "$app/Contents/MacOS/bitcoin-cli"
+            install -m 0644 src/qt/res/icons/bitcoin.icns "$app/Contents/Resources/bitcoin.icns"
+            cat > "$app/Contents/Info.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+          <key>CFBundleExecutable</key><string>bitcoin-qt</string>
+          <key>CFBundleIdentifier</key><string>org.yitcoin.wallet.experimental</string>
+          <key>CFBundleName</key><string>Yitcoin Wallet</string>
+          <key>CFBundleDisplayName</key><string>Yitcoin Wallet</string>
+          <key>CFBundleIconFile</key><string>bitcoin.icns</string>
+          <key>CFBundlePackageType</key><string>APPL</string>
+          <key>CFBundleShortVersionString</key><string>0.1.0</string>
+          <key>CFBundleVersion</key><string>0.1.0</string>
+          <key>LSMinimumSystemVersion</key><string>12.0</string>
+          <key>NSHighResolutionCapable</key><true/>
+          </dict></plist>
+          PLIST
+            "$QT_PREFIX/bin/macdeployqt" "$app" -always-overwrite -verbose=1 \
+              -executable="$app/Contents/MacOS/bitcoind" \
+              -executable="$app/Contents/MacOS/bitcoin-cli"
+            test -d "$app/Contents/Frameworks"
+            test -d "$app/Contents/PlugIns/platforms"
+            mv "$app/Contents/MacOS/bitcoin-qt" "$app/Contents/MacOS/yitcoin-qt-real"
+            cat > "$app/Contents/MacOS/YitcoinWallet" <<'LAUNCHER'
+          #!/bin/sh
+          set -eu
+          HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+          DATA="$HOME/Library/Application Support/Yitcoin"
+          mkdir -p "$DATA"
+          exec "$HERE/yitcoin-qt-real" -chain=yitcoin -datadir="$DATA" \
+            -addnode=185.182.8.84:19433 -listen=0 -server=1 "$@"
+          LAUNCHER
+            chmod 0755 "$app/Contents/MacOS/YitcoinWallet"
+            /usr/libexec/PlistBuddy -c 'Set :CFBundleExecutable YitcoinWallet' "$app/Contents/Info.plist"
+            "$app/Contents/MacOS/YitcoinWallet" -version
+            python3 contrib/yitcoin/unix_gui_smoke.py \
+              --gui "$app/Contents/MacOS/yitcoin-qt-real" \
+              --cli "$app/Contents/MacOS/bitcoin-cli"
+            cat > "$stage/README.txt" <<'README'
+          Yitcoin Wallet — macOS test package
+          Open YitcoinWallet.app. It starts with Yitcoin chain parameters and stores wallet data
+          under your Library/Application Support/Yitcoin folder. This is an unsigned experimental
+          package, not a public release. The app is not signed or notarized, so macOS may show
+          an unidentified-developer warning. Do not disable Gatekeeper globally; only open
+          software you trust and have verified. It creates/uses a local Yitcoin wallet; it does
+          not import another computer's wallet. The wallet GUI is not a CPU miner.
+          No security audit or coin-value guarantee is implied.
+          README
+            printf 'Source commit: %s\n' "$(git rev-parse HEAD)" >> "$stage/README.txt"
+            cp COPYING "$stage/COPYING.txt"
+            dmg="dist/yitcoin-${PLATFORM}-wallet-gui.dmg"
+            hdiutil create -volname "Yitcoin Wallet" -srcfolder "$stage" -ov -format UDZO "$dmg"
+            shasum -a 256 "$dmg" > "$dmg.sha256"
+          fi
+
+      - name: Upload unsigned test package
+        uses: actions/upload-artifact@v7
+        with:
+          name: yitcoin-${{ matrix.platform }}-wallet-gui-${{ github.run_id }}
+          path: dist/yitcoin-${{ matrix.platform }}-wallet-gui*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: yitcoin-${{ matrix.platform }}-gui-diagnostics-${{ github.run_id }}
+          path: |
+            build/CMakeFiles/CMakeConfigureLog.yaml
+            build/Testing/Temporary/LastTest.log
+            dist
+          if-no-files-found: ignore
+          retention-days: 7
