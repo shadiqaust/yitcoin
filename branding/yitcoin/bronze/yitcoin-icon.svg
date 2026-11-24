@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Yitcoin YTC"><circle cx="256" cy="256" r="232" fill="#BC7D51"/><circle cx="256" cy="256" r="208" fill="none" stroke="#171A20" stroke-opacity=".30" stroke-width="6"/><path d="M118 132H188L256 211L324 132H394L286 270V392H226V270Z" fill="#171A20"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Yitcoin YTC"><defs>
+<linearGradient id="bronze" x1="0" y1="0" x2="1" y2="1">
+<stop stop-color="#E5B78A"/><stop offset=".38" stop-color="#BC7D51"/><stop offset=".70" stop-color="#A7653E"/><stop offset="1" stop-color="#D99D68"/></linearGradient>
+<radialGradient id="coinShadow" cx=".5" cy=".48" r=".5">
+<stop stop-color="#111318" stop-opacity=".22"/><stop offset=".72" stop-color="#111318" stop-opacity=".12"/><stop offset="1" stop-color="#111318" stop-opacity="0"/></radialGradient>
+</defs><ellipse cx="256" cy="267" rx="242" ry="242" fill="url(#coinShadow)"/><circle cx="256" cy="256" r="232" fill="#805238"/><circle cx="256" cy="256" r="227" fill="#A96D46"/><circle cx="256" cy="256" r="221" fill="#BC7D51"/><circle cx="256" cy="256" r="224" fill="none" stroke="#F0C59D" stroke-opacity=".58" stroke-width="3"/><circle cx="256" cy="256" r="213" fill="none" stroke="#75472F" stroke-opacity=".28" stroke-width="3"/><path d="M118 132H188L256 211L324 132H394L286 270V392H226V270Z" fill="#171A20"/></svg>
