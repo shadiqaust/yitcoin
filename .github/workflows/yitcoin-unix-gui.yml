@@ -119,7 +119,7 @@ jobs:
           DATA="${XDG_DATA_HOME:-$HOME/.local/share}/yitcoin"
           mkdir -p "$DATA"
           exec "$HERE/bin/bitcoin-qt" -chain=yitcoin -datadir="$DATA" \
-            -addnode=185.182.8.84:19433 -listen=0 -server=1 "$@"
+            -addnode=seed.yitcoin.com:19433 -listen=0 -server=1 "$@"
           LAUNCHER
             chmod 0755 "$stage/Start-Yitcoin.sh"
             cat > "$stage/README.txt" <<'README'
@@ -164,7 +164,13 @@ jobs:
           PLIST
             # Bundle only the native platform plugin, not unrelated Homebrew Qt plugins.
             mkdir -p "$app/Contents/PlugIns/platforms"
-            cp "$QT_PREFIX/plugins/platforms/libqcocoa.dylib" "$app/Contents/PlugIns/platforms/"
+            # Homebrew splits Qt plugins into qtbase on current runners. Ask Qt
+            # for its plugin root instead of assuming qt@6/plugins exists.
+            qtpaths="$QT_PREFIX/bin/qtpaths6"
+            [[ -x "$qtpaths" ]] || qtpaths="$QT_PREFIX/bin/qtpaths"
+            plugin_root="$("$qtpaths" --query QT_INSTALL_PLUGINS)"
+            test -f "$plugin_root/platforms/libqcocoa.dylib"
+            cp "$plugin_root/platforms/libqcocoa.dylib" "$app/Contents/PlugIns/platforms/"
             libpaths=()
             for libdir in "$(brew --prefix)"/opt/*/lib; do
               [[ ! -d "$libdir" ]] || libpaths+=("-libpath=$libdir")
@@ -184,7 +190,7 @@ jobs:
           DATA="$HOME/Library/Application Support/Yitcoin"
           mkdir -p "$DATA"
           exec "$HERE/yitcoin-qt-real" -chain=yitcoin -datadir="$DATA" \
-            -addnode=185.182.8.84:19433 -listen=0 -server=1 "$@"
+            -addnode=seed.yitcoin.com:19433 -listen=0 -server=1 "$@"
           LAUNCHER
             chmod 0755 "$app/Contents/MacOS/YitcoinWallet"
             /usr/libexec/PlistBuddy -c 'Set :CFBundleExecutable YitcoinWallet' "$app/Contents/Info.plist"
@@ -293,6 +299,9 @@ jobs:
           cp COPYING "$stage/COPYING.txt"
           mkdir -p dist
           if [[ "$PLATFORM" == linux-x86_64 ]]; then
+            # Refresh packaging-only bootstrap configuration in the saved launcher.
+            python3 -c 'from pathlib import Path; import sys; p=Path(sys.argv[1]); s=p.read_text(); s=s.replace("185.182.8.84:19433", "seed.yitcoin.com:19433"); assert "seed.yitcoin.com:19433" in s; p.write_text(s)' "$stage/Start-Yitcoin.sh"
+            bash -n "$stage/Start-Yitcoin.sh"
             python3 contrib/yitcoin/unix_gui_smoke.py --gui "$stage/bin/bitcoin-qt" --cli "$stage/bin/bitcoin-cli" --qt-platform offscreen
             cat > "$stage/README.txt" <<'README'
           Yitcoin Wallet — Linux x86_64 test package
