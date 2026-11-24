@@ -28,7 +28,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: yitcoin-unix-gui-${{ github.ref }}
+  group: yitcoin-unix-gui-${{ github.ref }}-${{ inputs.platform }}
   cancel-in-progress: false
 
 jobs:
