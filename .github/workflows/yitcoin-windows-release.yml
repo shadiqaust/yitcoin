@@ -250,7 +250,7 @@ jobs:
           @echo off
           cd /d "%~dp0"
           if not exist "yitcoin-data" mkdir "yitcoin-data"
-          start "" "%~dp0bitcoin-qt.exe" -chain=yitcoin -datadir="%~dp0yitcoin-data" -addnode=185.182.8.84:19433 -listen=0 -server=1
+          start "" "%~dp0bitcoin-qt.exe" -chain=yitcoin -datadir="%~dp0yitcoin-data" -addnode=seed.yitcoin.com:19433 -listen=0 -server=1
           '@ | Set-Content "$package/Start-Yitcoin.cmd" -Encoding ascii
           @"
           Yitcoin Windows x64 experimental pre-release
