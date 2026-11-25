@@ -33,13 +33,13 @@ concurrency:
 
 jobs:
   gui:
-    if: inputs.reuse_run_id == '' && (matrix.platform != 'macos-arm64' || (github.repository == 'shadiqaust/yitcoin' && github.actor == 'shadiqaust' && github.ref == 'refs/heads/feature/unix-wallet-gui-packages' && inputs.ref == 'feature/unix-wallet-gui-packages'))
+    if: inputs.reuse_run_id == '' && (inputs.platform != 'macos-arm64' || (github.repository == 'shadiqaust/yitcoin' && github.actor == 'shadiqaust' && github.ref == 'refs/heads/feature/unix-wallet-gui-packages' && inputs.ref == 'feature/unix-wallet-gui-packages'))
     name: Wallet GUI ${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 240
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(inputs.platform == 'linux-x86_64' && '{"include":[{"platform":"linux-x86_64","runner":"ubuntu-24.04","os":"linux"}]}' || inputs.platform == 'macos-arm64' && '{"include":[{"platform":"macos-arm64","runner":["self-hosted","macOS","ARM64","yitcoin-gui-arm64"],"os":"macos"}]}' || inputs.platform == 'macos-x86_64' && '{"include":[{"platform":"macos-x86_64","runner":"macos-15-intel","os":"macos"}]}' || '{"include":[{"platform":"linux-x86_64","runner":"ubuntu-24.04","os":"linux"},{"platform":"macos-arm64","runner":["self-hosted","macOS","ARM64","yitcoin-gui-arm64"],"os":"macos"},{"platform":"macos-x86_64","runner":"macos-15-intel","os":"macos"}]}') }}
+      matrix: ${{ fromJSON(inputs.platform == 'linux-x86_64' && '{"include":[{"platform":"linux-x86_64","runner":"ubuntu-24.04","os":"linux"}]}' || inputs.platform == 'macos-arm64' && '{"include":[{"platform":"macos-arm64","runner":["self-hosted","macOS","ARM64","yitcoin-gui-arm64"],"os":"macos"}]}' || inputs.platform == 'macos-x86_64' && '{"include":[{"platform":"macos-x86_64","runner":"macos-15-intel","os":"macos"}]}' || '{"include":[{"platform":"linux-x86_64","runner":"ubuntu-24.04","os":"linux"},{"platform":"macos-x86_64","runner":"macos-15-intel","os":"macos"}]}') }}
     steps:
       - name: Check out Yitcoin source
         uses: actions/checkout@v6
@@ -241,14 +241,14 @@ jobs:
 
   repackage:
     name: Re-test and package ${{ matrix.platform }} without rebuilding
-    if: inputs.reuse_run_id != '' && (matrix.platform != 'macos-arm64' || (github.repository == 'shadiqaust/yitcoin' && github.actor == 'shadiqaust' && github.ref == 'refs/heads/feature/unix-wallet-gui-packages' && inputs.ref == 'feature/unix-wallet-gui-packages'))
+    if: inputs.reuse_run_id != '' && (inputs.platform != 'macos-arm64' || (github.repository == 'shadiqaust/yitcoin' && github.actor == 'shadiqaust' && github.ref == 'refs/heads/feature/unix-wallet-gui-packages' && inputs.ref == 'feature/unix-wallet-gui-packages'))
     runs-on: ${{ matrix.runner }}
     permissions:
       actions: read
       contents: read
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(inputs.platform == 'linux-x86_64' && '{"include":[{"platform":"linux-x86_64","runner":"ubuntu-24.04","os":"linux"}]}' || inputs.platform == 'macos-arm64' && '{"include":[{"platform":"macos-arm64","runner":["self-hosted","macOS","ARM64","yitcoin-gui-arm64"],"os":"macos"}]}' || inputs.platform == 'macos-x86_64' && '{"include":[{"platform":"macos-x86_64","runner":"macos-15-intel","os":"macos"}]}' || '{"include":[{"platform":"linux-x86_64","runner":"ubuntu-24.04","os":"linux"},{"platform":"macos-arm64","runner":["self-hosted","macOS","ARM64","yitcoin-gui-arm64"],"os":"macos"},{"platform":"macos-x86_64","runner":"macos-15-intel","os":"macos"}]}') }}
+      matrix: ${{ fromJSON(inputs.platform == 'linux-x86_64' && '{"include":[{"platform":"linux-x86_64","runner":"ubuntu-24.04","os":"linux"}]}' || inputs.platform == 'macos-arm64' && '{"include":[{"platform":"macos-arm64","runner":["self-hosted","macOS","ARM64","yitcoin-gui-arm64"],"os":"macos"}]}' || inputs.platform == 'macos-x86_64' && '{"include":[{"platform":"macos-x86_64","runner":"macos-15-intel","os":"macos"}]}' || '{"include":[{"platform":"linux-x86_64","runner":"ubuntu-24.04","os":"linux"},{"platform":"macos-x86_64","runner":"macos-15-intel","os":"macos"}]}') }}
     steps:
       - name: Check out packaging and smoke-test scripts
         uses: actions/checkout@v6
