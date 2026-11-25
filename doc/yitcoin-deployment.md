@@ -175,12 +175,12 @@ Retain the DLLs beside the `.exe` files. If dependencies are missing, install
 the official Microsoft Visual C++ x64 runtime; never download random DLLs.
 
 Choose a reachable Yitcoin server. The previously used server was
-`185.182.8.84:19433`; use it only if it is still your server and upgraded.
+`seed.yitcoin.com:19433`; use it only if it is still your server and upgraded.
 Check connectivity before starting:
 
 ```powershell
-$Peer = "185.182.8.84:19433"
-Test-NetConnection -ComputerName 185.182.8.84 -Port 19433
+$Peer = "seed.yitcoin.com:19433"
+Test-NetConnection -ComputerName seed.yitcoin.com -Port 19433
 & "$Bin\bitcoind.exe" -chain=yitcoin "-datadir=$Data" "-addnode=$Peer" -server=1 -rpcbind=127.0.0.1 -rpcallowip=127.0.0.1
 ```
 
@@ -248,7 +248,7 @@ using your normal package manager; the CI build used Homebrew Boost.
 
 ```bash
 "$BIN/bitcoind" -chain=yitcoin -datadir="$DATA" \
-  -addnode=185.182.8.84:19433 -server=1 \
+  -addnode=seed.yitcoin.com:19433 -server=1 \
   -rpcbind=127.0.0.1 -rpcallowip=127.0.0.1 -daemon
 "$BIN/bitcoin-cli" -chain=yitcoin -datadir="$DATA" -rpcwait getblockchaininfo
 "$BIN/bitcoin-cli" -chain=yitcoin -datadir="$DATA" getconnectioncount
@@ -401,7 +401,7 @@ Inside Ubuntu/WSL, build the compatible miner, then open an SSH tunnel in a
 separate **WSL terminal** to the Linux node:
 
 ```bash
-ssh -N -L 127.0.0.1:29432:127.0.0.1:19432 yitcoin@185.182.8.84
+ssh -N -L 127.0.0.1:29432:127.0.0.1:19432 yitcoin@seed.yitcoin.com
 ```
 
 Use your actual SSH account/server. This requires existing SSH access.
